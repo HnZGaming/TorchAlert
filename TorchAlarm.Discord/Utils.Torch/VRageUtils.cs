@@ -15,20 +15,18 @@ namespace Utils.Torch
 {
     internal static class VRageUtils
     {
-        public static IEnumerable<long> Owners(this IMyCubeGrid self)
+        public static long? GetOwnerFactionIdOrNull(this MyFactionCollection self, IMyCubeGrid grid)
         {
-            var ownerIds = new HashSet<long>();
-            foreach (var owner in self.BigOwners)
+            if (grid.BigOwners.TryGetFirst(out var ownerId))
             {
-                ownerIds.Add(owner);
+                var faction = self.GetPlayerFaction(ownerId);
+                if (faction != null)
+                {
+                    return faction.FactionId;
+                }
             }
 
-            foreach (var owner in self.SmallOwners)
-            {
-                ownerIds.Add(owner);
-            }
-
-            return ownerIds;
+            return null;
         }
 
         public static ulong SteamId(this MyPlayer p)

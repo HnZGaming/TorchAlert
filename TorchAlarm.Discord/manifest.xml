@@ -2,12 +2,12 @@
 
 <PluginManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-  <Name>Discord Alarm</Name>
+  <Name>Torch Alarm</Name>
 
   <Guid>5a486edf-d677-4c5d-a4d7-9015dd9fb20b</Guid>
 
   <Repository>None</Repository>
 
-  <Version>v1.0.7686.38682</Version>
+  <Version>v1.0.7687.6411</Version>
 
 </PluginManifest>
