@@ -194,6 +194,7 @@
         <Compile Include="TorchAlarm.Core\GridInfoCollector.cs" />
         <Compile Include="TorchAlarm.Core\OffenderGridInfo.cs" />
         <Compile Include="TorchAlarm.Core\ProximityAlarm.cs" />
+        <Compile Include="TorchAlarm.Core\ProximityAlarmBuffer.cs" />
         <Compile Include="TorchAlarm.Core\ProximityAlarmCreator.cs" />
         <Compile Include="TorchAlarm.Core\ProximityScanner.cs" />
         <Compile Include="TorchAlarm.Core\Proximity.cs" />

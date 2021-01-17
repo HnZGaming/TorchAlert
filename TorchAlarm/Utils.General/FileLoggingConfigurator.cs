@@ -55,7 +55,7 @@ namespace Utils.General
             LogManager.Configuration.Reload();
         }
 
-        public void Reconfigure(IConfig config)
+        public void Configure(IConfig config)
         {
             _target.FileName = config.LogFilePath;
 

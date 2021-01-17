@@ -17,7 +17,7 @@ namespace TorchAlarm.Discord
         {
             _db = db;
             _linkIds = new Dictionary<int, ulong>();
-            _nextLinkId = new Random().Next(0, int.MaxValue / 2);
+            _nextLinkId = new Random().Next(0, short.MaxValue / 2);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

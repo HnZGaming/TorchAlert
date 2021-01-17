@@ -14,7 +14,8 @@ namespace TorchAlarm
         ProximityScanner.IConfig,
         DiscordAlarmClient.IConfig,
         GridInfoCollector.IConfig,
-        FileLoggingConfigurator.IConfig
+        FileLoggingConfigurator.IConfig,
+        ProximityAlarmBuffer.IConfig
     {
         const string OpGroupName = "Operation";
         const string LogGroupName = "Logging";
@@ -26,10 +27,11 @@ namespace TorchAlarm
         string _token = "empty";
         bool _enable = true;
         List<ulong> _mutedSteamIds = new List<ulong>();
-        string _alarmFormat = "{alarm_name}: {grid_name} approaching in {distance} meters, owned by [faction_tag] {owner_name}";
+        string _alarmFormat = "{alarm_name}: spotted \"{grid_name}\" in {distance} meters, owned by [{faction_tag}] {owner_name}";
         string _logFilePath = "Logs/TorchAlarm-${shortdate}.log";
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
+        int _bufferCount = 3;
 
         [XmlElement("Enable")]
         [Display(Name = "Enable", GroupName = OpGroupName)]
@@ -53,6 +55,14 @@ namespace TorchAlarm
         {
             get => _proximityThreshold;
             set => SetValue(ref _proximityThreshold, value);
+        }
+
+        [XmlElement("BufferCount")]
+        [Display(Name = "Buffer count", GroupName = OpGroupName)]
+        public int BufferCount
+        {
+            get => _bufferCount;
+            set => SetValue(ref _bufferCount, value);
         }
 
         [XmlElement("Token")]
@@ -126,5 +136,7 @@ namespace TorchAlarm
                 OnPropertyChanged(nameof(MutedSteamIds));
             }
         }
+
+        public double BufferDistance => (double) _proximityThreshold / _bufferCount;
     }
 }

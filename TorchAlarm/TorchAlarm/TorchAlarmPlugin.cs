@@ -26,6 +26,7 @@ namespace TorchAlarm
         GridInfoCollector _defenderGridCollector;
         ProximityScanner _proximityScanner;
         ProximityAlarmCreator _alarmCreator;
+        ProximityAlarmBuffer _alarmBuffer;
         DiscordAlarmClient _discordClient;
         DiscordIdentityLinker _identityLinker;
         DiscordIdentityLinkDb _linkDb;
@@ -51,7 +52,7 @@ namespace TorchAlarm
 
             _fileLoggingConfigurator = new FileLoggingConfigurator(nameof(TorchAlarm), new[] {"TorchAlarm.*", "Discord.Net.*"}, Config.LogFilePath);
             _fileLoggingConfigurator.Initialize();
-            _fileLoggingConfigurator.Reconfigure(Config);
+            _fileLoggingConfigurator.Configure(Config);
 
             var linkDbPath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.csv");
             _linkDb = new DiscordIdentityLinkDb(linkDbPath);
@@ -59,6 +60,7 @@ namespace TorchAlarm
             _defenderGridCollector = new GridInfoCollector(Config);
             _proximityScanner = new ProximityScanner(Config);
             _alarmCreator = new ProximityAlarmCreator();
+            _alarmBuffer = new ProximityAlarmBuffer(Config);
             _identityLinker = new DiscordIdentityLinker(_linkDb);
             _discordClient = new DiscordAlarmClient(Config, _identityLinker);
 
@@ -69,17 +71,19 @@ namespace TorchAlarm
         {
             try
             {
-                if (args.PropertyName == nameof(Config.Enable))
+                if (Config.Enable)
                 {
-                    if (Config.Enable)
+                    if (args.PropertyName == nameof(Config.Enable) ||
+                        args.PropertyName == nameof(Config.Token))
                     {
                         await InitializeDiscordAsync();
                     }
                 }
 
-                if (args.PropertyName == nameof(Config.Token) && Config.Enable)
+                if (args.PropertyName == nameof(Config.LogFilePath) ||
+                    args.PropertyName == nameof(Config.EnableLoggingTrace))
                 {
-                    InitializeDiscordAsync().Wait();
+                    _fileLoggingConfigurator.Configure(Config);
                 }
             }
             catch (Exception e)
@@ -112,13 +116,14 @@ namespace TorchAlarm
                     continue;
                 }
 
+                Log.Debug("start main loop interval");
+
                 try
                 {
-                    Log.Debug("start main loop interval");
-
                     var grids = _defenderGridCollector.CollectDefenderGrids().ToArray();
                     var scan = _proximityScanner.ScanProximity(grids).ToArray();
                     var alarms = _alarmCreator.CreateAlarms(scan).ToArray();
+                    alarms = _alarmBuffer.Buffer(alarms).ToArray();
 
                     foreach (var alarm in alarms)
                     {
@@ -126,8 +131,6 @@ namespace TorchAlarm
                     }
 
                     await _discordClient.SendAlarmsAsync(alarms);
-
-                    Log.Debug("finished main loop interval");
                 }
                 catch (OperationCanceledException)
                 {
@@ -138,6 +141,7 @@ namespace TorchAlarm
                     Log.Error(e);
                 }
 
+                Log.Debug("finished main loop interval");
                 await Task.Delay(Config.ScanInterval.Seconds(), cancellationToken);
             }
         }

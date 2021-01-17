@@ -113,7 +113,7 @@ namespace TorchAlarm.Discord
                     Log.Info($"linked steam ID: {linkedSteamId}");
 
                     var linkedPlayerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(linkedSteamId);
-                    await e.Channel.SendMessageAsync($"Alarm linked to \"{linkedPlayerName}\" ({linkedSteamId})");
+                    await e.Channel.SendMessageAsync($"Alarm linked to \"{linkedPlayerName}\". Say \"mute\" and \"unmute\" to turn on/off alarms.");
                     return;
                 }
 
@@ -168,7 +168,7 @@ namespace TorchAlarm.Discord
             {
                 try
                 {
-                    var discordUser = _client.GetUser(discordId);
+                    var discordUser = await _client.Rest.GetUserAsync(discordId);
                     var message = MakeAlarmMessage(alarms);
                     await discordUser.SendMessageAsync(message);
                 }

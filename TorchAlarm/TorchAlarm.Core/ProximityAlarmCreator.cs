@@ -51,7 +51,7 @@ namespace TorchAlarm.Core
 
             foreach (var steamId in defender.SteamIds)
             {
-                yield return new ProximityAlarm(steamId, defender.GridName, distance, offender);
+                yield return new ProximityAlarm(steamId, defender.GridId, defender.GridName, distance, offender);
             }
         }
     }
