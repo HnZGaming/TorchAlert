@@ -1,56 +1,69 @@
-﻿using Torch.Commands;
+﻿using System;
+using Sandbox.Game.World;
+using Torch.Commands;
 using Torch.Commands.Permissions;
+using Utils.General;
+using Utils.Torch;
 using VRage.Game.ModAPI;
-using VRageMath;
 
 namespace TorchAlarm
 {
-    [Category("da")]
+    [Category("alarm")]
     public sealed class TorchAlarmCommandModule : CommandModule
     {
         TorchAlarmPlugin Plugin => (TorchAlarmPlugin) Context.Plugin;
 
         [Command("link")]
         [Permission(MyPromoteLevel.None)]
-        public void Link()
+        public void Link() => this.CatchAndReport(() =>
         {
-            if (Context.Player == null)
-            {
-                Context.Respond("Must be called by a player", Color.Red);
-                return;
-            }
-
-            var steamId = Context.Player.SteamUserId;
+            var steamId = GetArgPlayerSteamId();
             var linkId = Plugin.GenerateLinkId(steamId);
             Context.Respond($"Write this code to the Discord bot: {linkId}");
-        }
+        });
 
         [Command("mute")]
         [Permission(MyPromoteLevel.None)]
-        public void Mute()
+        public void Mute() => this.CatchAndReport(() =>
         {
-            if (Context.Player == null)
-            {
-                Context.Respond("Must be called by a player", Color.Red);
-                return;
-            }
-
-            Plugin.Config.Mute(Context.Player.SteamUserId);
+            var steamId = GetArgPlayerSteamId();
+            Plugin.Config.Mute(steamId);
             Context.Respond("Muted alarms");
-        }
+        });
 
         [Command("unmute")]
         [Permission(MyPromoteLevel.None)]
-        public void Unmute()
+        public void Unmute() => this.CatchAndReport(() =>
         {
-            if (Context.Player == null)
+            var steamId = GetArgPlayerSteamId();
+            Plugin.Config.Unmute(steamId);
+            Context.Respond("Unmuted alarms");
+        });
+
+        ulong GetArgPlayerSteamId()
+        {
+            if (Context.Player != null)
             {
-                Context.Respond("Must be called by a player", Color.Red);
-                return;
+                return Context.Player.SteamUserId;
             }
 
-            Plugin.Config.Unmute(Context.Player.SteamUserId);
-            Context.Respond("Unmuted alarms");
+            if (Context.Args.TryGetFirst(out var arg))
+            {
+                if (ulong.TryParse(arg, out var steamId))
+                {
+                    return steamId;
+                }
+
+                var player = MySession.Static.Players.GetPlayerByName(arg);
+                if (player == null)
+                {
+                    throw new Exception("unknown player name");
+                }
+
+                return player.SteamId();
+            }
+
+            throw new Exception("Must have a player");
         }
     }
 }

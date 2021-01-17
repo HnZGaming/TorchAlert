@@ -7,11 +7,11 @@ using VRage.Game;
 
 namespace TorchAlarm.Core
 {
-    public sealed class ProximityAlarmMaker
+    public sealed class ProximityAlarmCreator
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
-        public IEnumerable<ProximityAlarm> MakeAlarms(IEnumerable<Proximity> proximities)
+        public IEnumerable<ProximityAlarm> CreateAlarms(IEnumerable<Proximity> proximities)
         {
             // for each steam id, for each grid id, make a report
             var allAlarms = new Dictionary<ulong, Dictionary<long, ProximityAlarm>>();
@@ -31,7 +31,7 @@ namespace TorchAlarm.Core
             foreach (var (_, alarms) in allAlarms)
             foreach (var (_, alarm) in alarms)
             {
-                Log.Trace($"made alarm: {alarm}");
+                Log.Trace($"created alarm: {alarm}");
                 yield return alarm;
             }
         }

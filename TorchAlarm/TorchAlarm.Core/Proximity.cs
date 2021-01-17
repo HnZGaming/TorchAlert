@@ -22,7 +22,7 @@
 
         public override string ToString()
         {
-            return $"{nameof(Defender)}: {Defender}, {nameof(Offender)}: {Offender}, {nameof(Distance)}: {Distance}";
+            return $"{nameof(Defender)}: ({Defender}), {nameof(Offender)}: ({Offender}), {nameof(Distance)}: {Distance}";
         }
     }
 }

@@ -59,7 +59,7 @@ namespace TorchAlarm.Core
             var factionId = MySession.Static.Factions.GetOwnerFactionOrNull(grid)?.FactionId;
             gridInfo = new DefenderGridInfo(grid.EntityId, grid.DisplayName, factionId, grid.GetPosition(), steamIds);
 
-            Log.Trace($"grid info: {gridInfo}");
+            Log.Trace($"defender: {gridInfo}");
 
             return true;
         }

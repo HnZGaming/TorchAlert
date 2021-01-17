@@ -17,7 +17,7 @@
 
         public override string ToString()
         {
-            return $"{nameof(SteamId)}: {SteamId}, {nameof(GridName)}: {GridName}, {nameof(Distance)}: {Distance}, {nameof(Offender)}: {Offender}";
+            return $"{nameof(SteamId)}: {SteamId}, {nameof(GridName)}: {GridName}, {nameof(Distance)}: {Distance}, {nameof(Offender)}: ({Offender})";
         }
     }
 }

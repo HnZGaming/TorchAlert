@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -24,9 +25,10 @@ namespace TorchAlarm
         CancellationTokenSource _cancellationTokenSource;
         GridInfoCollector _defenderGridCollector;
         ProximityScanner _proximityScanner;
-        ProximityAlarmMaker _alarmMaker;
+        ProximityAlarmCreator _alarmCreator;
         DiscordAlarmClient _discordClient;
         DiscordIdentityLinker _identityLinker;
+        DiscordIdentityLinkDb _linkDb;
 
         public TorchAlarmConfig Config => _config.Data;
 
@@ -51,14 +53,13 @@ namespace TorchAlarm
             _fileLoggingConfigurator.Initialize();
             _fileLoggingConfigurator.Reconfigure(Config);
 
-            var dbPath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.json");
-            var db = new StupidDb(dbPath);
-            db.Read();
+            var linkDbPath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.csv");
+            _linkDb = new DiscordIdentityLinkDb(linkDbPath);
 
             _defenderGridCollector = new GridInfoCollector(Config);
             _proximityScanner = new ProximityScanner(Config);
-            _alarmMaker = new ProximityAlarmMaker();
-            _identityLinker = new DiscordIdentityLinker(db);
+            _alarmCreator = new ProximityAlarmCreator();
+            _identityLinker = new DiscordIdentityLinker(_linkDb);
             _discordClient = new DiscordAlarmClient(Config, _identityLinker);
 
             Log.Info("initialized");
@@ -68,10 +69,17 @@ namespace TorchAlarm
         {
             try
             {
-                if (args.PropertyName == nameof(TorchAlarmConfig.Token))
+                if (args.PropertyName == nameof(Config.Enable))
                 {
-                    _discordClient = new DiscordAlarmClient(Config, _identityLinker);
-                    await _discordClient.InitializeAsync();
+                    if (Config.Enable)
+                    {
+                        await InitializeDiscordAsync();
+                    }
+                }
+
+                if (args.PropertyName == nameof(Config.Token) && Config.Enable)
+                {
+                    InitializeDiscordAsync().Wait();
                 }
             }
             catch (Exception e)
@@ -82,21 +90,18 @@ namespace TorchAlarm
 
         void OnGameLoaded()
         {
-            TaskUtils.RunUntilCancelledAsync(MainLoop, _cancellationTokenSource.Token);
+            TaskUtils.RunUntilCancelledAsync(MainLoop, _cancellationTokenSource.Token).Forget(Log);
         }
 
         async Task MainLoop(CancellationToken cancellationToken)
         {
             Log.Info("start main loop");
 
-            try
+            _linkDb.Initialize();
+
+            if (Config.Enable)
             {
-                await _discordClient.InitializeAsync();
-                Log.Info("discord connected");
-            }
-            catch (Exception e)
-            {
-                Log.Warn(e, "failed connecting discord; dry-run until config is changed");
+                await InitializeDiscordAsync();
             }
 
             while (!cancellationToken.IsCancellationRequested)
@@ -111,9 +116,9 @@ namespace TorchAlarm
                 {
                     Log.Debug("start main loop interval");
 
-                    var grids = _defenderGridCollector.CollectDefenderGrids();
-                    var scan = _proximityScanner.ScanProximity(grids);
-                    var alarms = _alarmMaker.MakeAlarms(scan);
+                    var grids = _defenderGridCollector.CollectDefenderGrids().ToArray();
+                    var scan = _proximityScanner.ScanProximity(grids).ToArray();
+                    var alarms = _alarmCreator.CreateAlarms(scan).ToArray();
 
                     foreach (var alarm in alarms)
                     {
@@ -137,13 +142,21 @@ namespace TorchAlarm
             }
         }
 
-        void OnGameUnloading()
+        async Task InitializeDiscordAsync()
         {
+            try
+            {
+                await _discordClient.InitializeAsync();
+                Log.Info("discord connected");
+            }
+            catch (Exception e)
+            {
+                Log.Warn(e, "failed connecting discord; dry-run until config is changed");
+            }
         }
 
-        public override void Dispose()
+        void OnGameUnloading()
         {
-            base.Dispose();
             _discordClient?.Dispose();
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();

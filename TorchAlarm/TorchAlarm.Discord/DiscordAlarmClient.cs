@@ -52,6 +52,15 @@ namespace TorchAlarm.Discord
             Log.Info("connecting...");
             IsReady = false;
 
+            try
+            {
+                await _client.StopAsync();
+            }
+            catch (Exception e)
+            {
+                Log.Trace(e, "ignoring");
+            }
+
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
             await _client.SetStatusAsync(UserStatus.Online);
@@ -69,6 +78,8 @@ namespace TorchAlarm.Discord
 
         async Task OnMessageCreatedAsync(SocketMessage er)
         {
+            if (er.Author.IsBot) return;
+
             var e = er as SocketUserMessage ?? throw new Exception("invalid message type");
             Log.Debug($"bot message received: {e.Channel.Name} \"{e.Content}\"");
 
@@ -111,7 +122,7 @@ namespace TorchAlarm.Discord
 
             if (!_identityLinker.TryGetLinkedSteamUser(e.Author.Id, out var steamId))
             {
-                await e.Channel.SendMessageAsync("Alarm not linked to you; type `!ta link` in game to get started");
+                await e.Channel.SendMessageAsync("Alarm not linked to you; type `!alarm link` in game to get started");
                 return;
             }
 
@@ -145,11 +156,11 @@ namespace TorchAlarm.Discord
                 if (_identityLinker.TryGetLinkedDiscordId(alarm.SteamId, out var discordId))
                 {
                     linkedAlarms.Add(discordId, alarm);
-                    Log.Trace($"linked alarm: {alarm}");
+                    Log.Trace($"linked: {alarm}");
                 }
                 else
                 {
-                    Log.Trace($"not linked alarm: {alarm}");
+                    Log.Trace($"not linked: {alarm}");
                 }
             }
 

@@ -25,8 +25,7 @@ namespace TorchAlarm
         int _proximityThreshold = 5000;
         string _token = "empty";
         bool _enable = true;
-        List<ulong> _mutedSteamIds;
-        ulong _guildId;
+        List<ulong> _mutedSteamIds = new List<ulong>();
         string _alarmFormat = "{alarm_name}: {grid_name} approaching in {distance} meters, owned by [faction_tag] {owner_name}";
         string _logFilePath = "Logs/TorchAlarm-${shortdate}.log";
         bool _suppressWpfOutput;
@@ -62,14 +61,6 @@ namespace TorchAlarm
         {
             get => _token;
             set => SetValue(ref _token, value);
-        }
-
-        [XmlElement("GuildId")]
-        [Display(Name = "Discord guild ID", GroupName = DiscordGroupName)]
-        public ulong GuildId
-        {
-            get => _guildId;
-            set => SetValue(ref _guildId, value);
         }
 
         [XmlElement("AlarmFormat")]

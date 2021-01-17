@@ -35,7 +35,7 @@ namespace TorchAlarm.Core
 
         public override string ToString()
         {
-            return $"{nameof(GridId)}: {GridId}, {nameof(GridName)}: {GridName}, {nameof(FactionId)}: {FactionId ?? 0}, {nameof(Position)}: {Position}, {nameof(SteamIds)}: {SteamIds.ToStringSeq()}";
+            return $"{nameof(GridName)}: {GridName}, {nameof(SteamIds)}: {SteamIds.ToStringSeq()}, {nameof(FactionId)}: {FactionId ?? 0}";
         }
     }
 }

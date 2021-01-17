@@ -3,19 +3,17 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using NLog;
 using Sandbox.Game.World;
-using Utils.General;
 
 namespace TorchAlarm.Discord
 {
     public sealed class DiscordIdentityLinker
     {
-        const string DbTableName = "links";
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        readonly StupidDb _db;
+        readonly DiscordIdentityLinkDb _db;
         readonly Dictionary<int, ulong> _linkIds;
         int _nextLinkId;
 
-        public DiscordIdentityLinker(StupidDb db)
+        public DiscordIdentityLinker(DiscordIdentityLinkDb db)
         {
             _db = db;
             _linkIds = new Dictionary<int, ulong>();
@@ -25,7 +23,7 @@ namespace TorchAlarm.Discord
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryGetLinkedSteamUser(ulong discordId, out ulong steamId)
         {
-            if (TryGetLinkByDiscordId(discordId, out var link))
+            if (_db.TryGetLinkByDiscordId(discordId, out var link))
             {
                 steamId = link.SteamId;
                 return true;
@@ -38,7 +36,7 @@ namespace TorchAlarm.Discord
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryGetLinkedDiscordId(ulong steamId, out ulong discordId)
         {
-            if (TryGetLinkBySteamId(steamId, out var link))
+            if (_db.TryGetLinkBySteamId(steamId, out var link))
             {
                 discordId = link.DiscordId;
                 return true;
@@ -65,57 +63,10 @@ namespace TorchAlarm.Discord
         {
             if (_linkIds.TryGetValue(linkId, out steamId))
             {
-                MakeLink(steamId, discordId);
+                _db.MakeLink(steamId, discordId);
                 return true;
             }
 
-            return false;
-        }
-
-        void MakeLink(ulong steamId, ulong discordId)
-        {
-            if (!TryGetLinkBySteamId(steamId, out var link))
-            {
-                link = new DiscordIdentityLink();
-            }
-
-            link.SteamId = steamId;
-            link.DiscordId = discordId;
-
-            _db.Insert(DbTableName, new[] {link});
-
-            Log.Info($"Made link: {link}");
-        }
-
-        bool TryGetLinkBySteamId(ulong steamId, out DiscordIdentityLink link)
-        {
-            var links = _db.Query<DiscordIdentityLink>(DbTableName);
-            foreach (var lk in links)
-            {
-                if (lk.SteamId == steamId)
-                {
-                    link = lk;
-                    return true;
-                }
-            }
-
-            link = null;
-            return false;
-        }
-
-        bool TryGetLinkByDiscordId(ulong discordId, out DiscordIdentityLink link)
-        {
-            var links = _db.Query<DiscordIdentityLink>(DbTableName);
-            foreach (var lk in links)
-            {
-                if (lk.DiscordId == discordId)
-                {
-                    link = lk;
-                    return true;
-                }
-            }
-
-            link = null;
             return false;
         }
     }

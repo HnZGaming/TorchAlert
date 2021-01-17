@@ -21,7 +21,7 @@
 
         public override string ToString()
         {
-            return $"{nameof(GridId)}: {GridId}, {nameof(GridName)}: {GridName}, {nameof(OwnerName)}: {OwnerName ?? "<none>"}, {nameof(FactionId)}: {FactionId ?? 0}, {nameof(FactionName)}: {FactionName ?? "<none>"}, {nameof(FactionTag)}: {FactionTag ?? "<none>"}";
+            return $"{nameof(GridName)}: {GridName}, {nameof(OwnerName)}: {OwnerName ?? "<none>"}, {nameof(FactionId)}: {FactionId ?? 0}, {nameof(FactionName)}: {FactionName ?? "<none>"}, {nameof(FactionTag)}: {FactionTag ?? "<none>"}";
         }
     }
 }
