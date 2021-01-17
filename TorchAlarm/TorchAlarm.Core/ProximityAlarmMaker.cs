@@ -7,35 +7,36 @@ using VRage.Game;
 
 namespace TorchAlarm.Core
 {
-    public sealed class ProximityReportMaker
+    public sealed class ProximityAlarmMaker
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
-        public IEnumerable<ProximityReport> GetReports(IEnumerable<Proximity> proximities)
+        public IEnumerable<ProximityAlarm> MakeAlarms(IEnumerable<Proximity> proximities)
         {
             // for each steam id, for each grid id, make a report
-            var _reports = new Dictionary<ulong, Dictionary<long, ProximityReport>>();
+            var allAlarms = new Dictionary<ulong, Dictionary<long, ProximityAlarm>>();
 
             foreach (var proximity in proximities)
-            foreach (var report in GetProximityReports(proximity))
+            foreach (var alarm in GetProximityAlarms(proximity))
             {
-                if (!_reports.TryGetValue(report.SteamId, out var reports))
+                if (!allAlarms.TryGetValue(alarm.SteamId, out var alarms))
                 {
-                    reports = new Dictionary<long, ProximityReport>();
-                    _reports[report.SteamId] = reports;
+                    alarms = new Dictionary<long, ProximityAlarm>();
+                    allAlarms[alarm.SteamId] = alarms;
                 }
 
-                reports[proximity.Offender.GridId] = report;
+                alarms[proximity.Offender.GridId] = alarm;
             }
 
-            foreach (var (_, reports) in _reports)
-            foreach (var (_, report) in reports)
+            foreach (var (_, alarms) in allAlarms)
+            foreach (var (_, alarm) in alarms)
             {
-                yield return report;
+                Log.Trace($"made alarm: {alarm}");
+                yield return alarm;
             }
         }
 
-        IEnumerable<ProximityReport> GetProximityReports(Proximity proximity)
+        IEnumerable<ProximityAlarm> GetProximityAlarms(Proximity proximity)
         {
             var (defender, offender, distance) = proximity;
 
@@ -44,12 +45,13 @@ namespace TorchAlarm.Core
                 offender.FactionId is long offenderFactionId)
             {
                 var (relation, _) = MySession.Static.Factions.GetRelationBetweenFactions(defenderFactionId, offenderFactionId);
+                Log.Trace($"checking relationship: {relation}, {proximity}");
                 if (relation != MyRelationsBetweenFactions.Enemies) yield break;
             }
 
             foreach (var steamId in defender.SteamIds)
             {
-                yield return new ProximityReport(steamId, defender.GridName, offender, distance);
+                yield return new ProximityAlarm(steamId, defender.GridName, distance, offender);
             }
         }
     }

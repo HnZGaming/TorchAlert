@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
 using Utils.Torch;
@@ -16,6 +17,7 @@ namespace TorchAlarm.Core
             int ProximityThreshold { get; }
         }
 
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
 
         public ProximityScanner(IConfig config)
@@ -44,14 +46,30 @@ namespace TorchAlarm.Core
                     var distance = Vector3D.Distance(defender.Position, position);
                     if (distance > _config.ProximityThreshold) continue;
 
-                    var factionId = MySession.Static.Factions.GetOwnerFactionIdOrNull(nearGrid);
-                    var gridInfo = new OffenderGridInfo(nearGrid.EntityId, factionId);
+                    var gridInfo = MakeOffenderGridInfo(nearGrid);
                     var proximity = new Proximity(defender, gridInfo, distance);
+
+                    Log.Trace($"proximity: {proximity}");
                     yield return proximity;
                 }
 
                 tmpNearEntities.Clear();
             }
+        }
+
+        static OffenderGridInfo MakeOffenderGridInfo(MyCubeGrid grid)
+        {
+            if (!MySession.Static.Players.TryGetPlayerByGrid(grid, out var player))
+            {
+                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, null, null, null, null);
+            }
+
+            if (!MySession.Static.Factions.TryGetFactionByPlayerId(player.PlayerId(), out var faction))
+            {
+                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, player.DisplayName, null, null, null);
+            }
+
+            return new OffenderGridInfo(grid.EntityId, grid.DisplayName, player.DisplayName, faction.FactionId, faction.Tag, faction.Name);
         }
     }
 }

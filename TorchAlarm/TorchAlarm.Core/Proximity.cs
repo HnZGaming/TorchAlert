@@ -19,5 +19,10 @@
             offender = Offender;
             distance = Distance;
         }
+
+        public override string ToString()
+        {
+            return $"{nameof(Defender)}: {Defender}, {nameof(Offender)}: {Offender}, {nameof(Distance)}: {Distance}";
+        }
     }
 }

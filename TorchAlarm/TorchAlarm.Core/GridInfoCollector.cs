@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
 using Utils.General;
@@ -15,6 +16,7 @@ namespace TorchAlarm.Core
             bool IsMuted(ulong steamId);
         }
 
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
 
         public GridInfoCollector(IConfig config)
@@ -28,26 +30,37 @@ namespace TorchAlarm.Core
             foreach (var group in groups)
             {
                 var grid = group.GroupData.Root;
-                if (TryFromGrid(grid, out var gridInfo))
+                if (TryMakeDefenderGridInfo(grid, out var gridInfo))
                 {
                     yield return gridInfo;
                 }
             }
         }
 
-        bool TryFromGrid(IMyCubeGrid grid, out DefenderGridInfo defenderGrid)
+        bool TryMakeDefenderGridInfo(IMyCubeGrid grid, out DefenderGridInfo gridInfo)
         {
-            defenderGrid = null;
+            gridInfo = null;
+
+            Log.Trace($"\"{grid.DisplayName}\" static: {grid.IsStatic}");
 
             if (!grid.IsStatic) return false;
 
             var steamIds = new HashSet<ulong>();
             GetSteamIdsFromGrid(grid, steamIds);
+
+            Log.Trace($"alarm receiver steam IDs: {steamIds.ToStringSeq()}");
+
             steamIds.RemoveWhere(id => _config.IsMuted(id));
+
+            Log.Trace($"after removing muted players: {steamIds.ToStringSeq()}");
+
             if (!steamIds.Any()) return false;
 
-            var factionId = MySession.Static.Factions.GetOwnerFactionIdOrNull(grid);
-            defenderGrid = new DefenderGridInfo(grid.EntityId, grid.DisplayName, factionId, grid.GetPosition(), steamIds);
+            var factionId = MySession.Static.Factions.GetOwnerFactionOrNull(grid)?.FactionId;
+            gridInfo = new DefenderGridInfo(grid.EntityId, grid.DisplayName, factionId, grid.GetPosition(), steamIds);
+
+            Log.Trace($"grid info: {gridInfo}");
+
             return true;
         }
 

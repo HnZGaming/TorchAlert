@@ -10,6 +10,21 @@ namespace TorchAlarm
     {
         TorchAlarmPlugin Plugin => (TorchAlarmPlugin) Context.Plugin;
 
+        [Command("link")]
+        [Permission(MyPromoteLevel.None)]
+        public void Link()
+        {
+            if (Context.Player == null)
+            {
+                Context.Respond("Must be called by a player", Color.Red);
+                return;
+            }
+
+            var steamId = Context.Player.SteamUserId;
+            var linkId = Plugin.GenerateLinkId(steamId);
+            Context.Respond($"Write this code to the Discord bot: {linkId}");
+        }
+
         [Command("mute")]
         [Permission(MyPromoteLevel.None)]
         public void Mute()
@@ -21,6 +36,7 @@ namespace TorchAlarm
             }
 
             Plugin.Config.Mute(Context.Player.SteamUserId);
+            Context.Respond("Muted alarms");
         }
 
         [Command("unmute")]
@@ -34,6 +50,7 @@ namespace TorchAlarm
             }
 
             Plugin.Config.Unmute(Context.Player.SteamUserId);
+            Context.Respond("Unmuted alarms");
         }
     }
 }

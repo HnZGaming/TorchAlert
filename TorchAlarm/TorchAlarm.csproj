@@ -7,7 +7,7 @@
         <ProjectGuid>{E3945BE3-52C6-4EC3-AD63-BFF8671C81D6}</ProjectGuid>
         <OutputType>Library</OutputType>
         <AppDesignerFolder>Properties</AppDesignerFolder>
-        <AssemblyName>TorchAlarm.Discord</AssemblyName>
+        <AssemblyName>TorchAlarm</AssemblyName>
         <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
     </PropertyGroup>
@@ -152,14 +152,17 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="TorchAlarm.Core\DiscordBridge.cs" />
         <Compile Include="TorchAlarm.Core\DefenderGridInfo.cs" />
         <Compile Include="TorchAlarm.Core\GridInfoCollector.cs" />
         <Compile Include="TorchAlarm.Core\OffenderGridInfo.cs" />
-        <Compile Include="TorchAlarm.Core\ProximityReport.cs" />
-        <Compile Include="TorchAlarm.Core\ProximityReportMaker.cs" />
+        <Compile Include="TorchAlarm.Core\ProximityAlarm.cs" />
+        <Compile Include="TorchAlarm.Core\ProximityAlarmMaker.cs" />
         <Compile Include="TorchAlarm.Core\ProximityScanner.cs" />
         <Compile Include="TorchAlarm.Core\Proximity.cs" />
+        <Compile Include="TorchAlarm.Discord\DiscordAlarmClient.cs" />
+        <Compile Include="TorchAlarm.Discord\DiscordIdentityLink.cs" />
+        <Compile Include="TorchAlarm.Discord\DiscordIdentityLinker.cs" />
+        <Compile Include="TorchAlarm.Discord\SQLite.cs" />
         <Compile Include="TorchAlarm\TorchAlarmCommandModule.cs" />
         <Compile Include="TorchAlarm\TorchAlarmConfig.cs" />
         <Compile Include="TorchAlarm\TorchAlarmPlugin.cs" />

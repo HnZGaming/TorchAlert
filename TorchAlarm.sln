@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TorchAlarm.Discord", "TorchAlarm.Discord\TorchAlarm.Discord.csproj", "{E3945BE3-52C6-4EC3-AD63-BFF8671C81D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TorchAlarm", "TorchAlarm\TorchAlarm.csproj", "{E3945BE3-52C6-4EC3-AD63-BFF8671C81D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TorchAlarm.Discord.Tests", "TorchAlarm.Discord.Tests\TorchAlarm.Discord.Tests.csproj", "{2D493BC4-28EF-4345-86A0-17CD40A3ECB0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TorchAlarm.Tests", "TorchAlarm.Tests\TorchAlarm.Tests.csproj", "{2D493BC4-28EF-4345-86A0-17CD40A3ECB0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -15,15 +15,11 @@ namespace Utils.Torch
 {
     internal static class VRageUtils
     {
-        public static long? GetOwnerFactionIdOrNull(this MyFactionCollection self, IMyCubeGrid grid)
+        public static MyFaction GetOwnerFactionOrNull(this MyFactionCollection self, IMyCubeGrid grid)
         {
             if (grid.BigOwners.TryGetFirst(out var ownerId))
             {
-                var faction = self.GetPlayerFaction(ownerId);
-                if (faction != null)
-                {
-                    return faction.FactionId;
-                }
+                return self.GetPlayerFaction(ownerId);
             }
 
             return null;
@@ -146,6 +142,19 @@ namespace Utils.Torch
         public static void SendAddGps(this MyGpsCollection self, long identityId, MyGps gps, bool playSound)
         {
             self.SendAddGps(identityId, ref gps, gps.EntityId, playSound);
+        }
+
+        public static bool TryGetFactionByPlayerId(this MyFactionCollection self, long playerId, out IMyFaction faction)
+        {
+            faction = MySession.Static.Factions.GetPlayerFaction(playerId);
+            return faction != null;
+        }
+
+        public static bool TryGetPlayerByGrid(this MyPlayerCollection self, IMyCubeGrid grid, out MyPlayer player)
+        {
+            player = null;
+            return grid.BigOwners.TryGetFirst(out var ownerId) &&
+                   MySession.Static.Players.TryGetPlayerById(ownerId, out player);
         }
     }
 }

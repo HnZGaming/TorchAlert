@@ -124,5 +124,16 @@ namespace Utils.General
         {
             return self.ToDictionary(p => p.Item1, p => p.Item2);
         }
+
+        public static void Add<K, V, C>(this IDictionary<K, C> self, K key, V element) where C : ICollection<V>, new()
+        {
+            if (!self.TryGetValue(key, out var elements))
+            {
+                elements = new C();
+                self[key] = elements;
+            }
+
+            elements.Add(element);
+        }
     }
 }

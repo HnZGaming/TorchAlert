@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Utils.General;
 using VRageMath;
 
 namespace TorchAlarm.Core
@@ -31,5 +32,10 @@ namespace TorchAlarm.Core
         public long? FactionId { get; }
         public Vector3D Position { get; }
         public IEnumerable<ulong> SteamIds { get; }
+
+        public override string ToString()
+        {
+            return $"{nameof(GridId)}: {GridId}, {nameof(GridName)}: {GridName}, {nameof(FactionId)}: {FactionId ?? 0}, {nameof(Position)}: {Position}, {nameof(SteamIds)}: {SteamIds.ToStringSeq()}";
+        }
     }
 }

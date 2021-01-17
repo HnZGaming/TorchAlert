@@ -7,6 +7,7 @@ using Torch;
 using Torch.API;
 using Torch.API.Plugins;
 using TorchAlarm.Core;
+using TorchAlarm.Discord;
 using Utils.General;
 using Utils.Torch;
 
@@ -18,11 +19,13 @@ namespace TorchAlarm
 
         Persistent<TorchAlarmConfig> _config;
         UserControl _userControl;
+        FileLoggingConfigurator _fileLoggingConfigurator;
         CancellationTokenSource _cancellationTokenSource;
         GridInfoCollector _defenderGridCollector;
         ProximityScanner _proximityScanner;
-        ProximityReportMaker _reportMaker;
-        DiscordBridge _discordBridge;
+        ProximityAlarmMaker _alarmMaker;
+        DiscordAlarmClient _discordClient;
+        DiscordIdentityLinker _idendityLinker;
 
         public TorchAlarmConfig Config => _config.Data;
 
@@ -42,9 +45,17 @@ namespace TorchAlarm
             var configPath = this.MakeConfigFilePath();
             _config = Persistent<TorchAlarmConfig>.Load(configPath);
 
+            _fileLoggingConfigurator = new FileLoggingConfigurator(nameof(TorchAlarm), "TorchAlarm.*", Config.LogFilePath);
+            _fileLoggingConfigurator.Initialize();
+            _fileLoggingConfigurator.Reconfigure(Config);
+
+            var linkerFilePath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.sqlite");
+            _idendityLinker = new DiscordIdentityLinker(linkerFilePath);
+
             _defenderGridCollector = new GridInfoCollector(Config);
             _proximityScanner = new ProximityScanner(Config);
-            _reportMaker = new ProximityReportMaker();
+            _alarmMaker = new ProximityAlarmMaker();
+            _discordClient = new DiscordAlarmClient(Config, _idendityLinker);
         }
 
         void OnGameLoaded()
@@ -54,6 +65,11 @@ namespace TorchAlarm
 
         async Task MainLoop(CancellationToken cancellationToken)
         {
+            Log.Debug("Start main loop");
+
+            _idendityLinker.Initialize();
+            await _discordClient.ConnectAsync();
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (!Config.Enable)
@@ -64,13 +80,20 @@ namespace TorchAlarm
 
                 try
                 {
+                    Log.Debug("Start main loop interval");
+
                     var grids = _defenderGridCollector.CollectDefenderGrids();
                     var scan = _proximityScanner.ScanProximity(grids);
-                    var reports = _reportMaker.GetReports(scan);
+                    var alarms = _alarmMaker.MakeAlarms(scan);
 
-                    _discordBridge?.Dispose();
-                    _discordBridge = new DiscordBridge(Config);
-                    await _discordBridge.Send(reports);
+                    foreach (var alarm in alarms)
+                    {
+                        Log.Trace($"alarm: {alarm}");
+                    }
+
+                    await _discordClient.SendAlarmsAsync(alarms);
+
+                    Log.Debug("Finished main loop interval");
                 }
                 catch (OperationCanceledException)
                 {
@@ -92,8 +115,14 @@ namespace TorchAlarm
         public override void Dispose()
         {
             base.Dispose();
+            _discordClient?.Dispose();
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
+        }
+
+        public int GenerateLinkId(ulong steamId)
+        {
+            return _idendityLinker.GenerateLinkId(steamId);
         }
     }
 }
