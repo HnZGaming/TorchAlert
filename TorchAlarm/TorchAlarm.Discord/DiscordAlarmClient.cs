@@ -42,7 +42,7 @@ namespace TorchAlarm.Discord
             };
 
             _client = new DiscordSocketClient(discordConfig);
-            _client.MessageReceived += OnMessageCreatedAsync;
+            _client.MessageReceived += OnMessageReceivedAsync;
         }
 
         public bool IsReady { get; private set; }
@@ -72,11 +72,11 @@ namespace TorchAlarm.Discord
 
         public void Dispose()
         {
-            _client.MessageReceived -= OnMessageCreatedAsync;
+            _client.MessageReceived -= OnMessageReceivedAsync;
             _client.Dispose();
         }
 
-        async Task OnMessageCreatedAsync(SocketMessage er)
+        async Task OnMessageReceivedAsync(SocketMessage er)
         {
             if (er.Author.IsBot) return;
 
@@ -85,9 +85,16 @@ namespace TorchAlarm.Discord
 
             try
             {
-                if (e.Channel is SocketDMChannel)
+                if (e.Channel is SocketDMChannel) // direct message
                 {
-                    await OnPrivateMessageCreatedAsync(e);
+                    Log.Info($"bot direct message received: \"{e.Content}\"");
+                    await OnMessageReceivedAsync(e.Channel, e.Author, e.Content);
+                }
+                else if (e.MentionedUsers.Any(u => u.Id == _client.CurrentUser.Id))
+                {
+                    Log.Info($"bot mentioned message received: \"{e.Content}\"");
+                    var content = DiscordUtils.RemoveMentionPrefix(e.Content);
+                    await OnMessageReceivedAsync(e.Channel, e.Author, content);
                 }
             }
             catch (Exception ex)
@@ -99,50 +106,50 @@ namespace TorchAlarm.Discord
             }
         }
 
-        async Task OnPrivateMessageCreatedAsync(SocketUserMessage e)
+        async Task OnMessageReceivedAsync(ISocketMessageChannel channel, SocketUser user, string content)
         {
-            Log.Info($"bot private message received: \"{e.Content}\"");
+            Log.Info($"input: \"{content}\" by user: {user.Username} in channel: {channel.Name}");
 
-            var msg = e.Content.ToLower();
+            var msg = content.ToLower();
             if (int.TryParse(msg, out var linkId))
             {
                 Log.Info($"link id: {linkId}");
 
-                if (_identityLinker.TryMakeLink(linkId, e.Author.Id, out var linkedSteamId))
+                if (_identityLinker.TryMakeLink(linkId, user.Id, out var linkedSteamId))
                 {
                     Log.Info($"linked steam ID: {linkedSteamId}");
 
                     var linkedPlayerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(linkedSteamId);
-                    await e.Channel.SendMessageAsync($"Alarm linked to \"{linkedPlayerName}\". Say \"mute\" and \"unmute\" to turn on/off alarms.");
+                    await channel.MentionAsync(user.Id, $"Alarm linked to \"{linkedPlayerName}\". Say \"mute\" and \"unmute\" to turn on/off alarms.");
                     return;
                 }
 
-                await e.Channel.SendMessageAsync($"Invalid input; not mapped: {linkId}");
+                await channel.MentionAsync(user.Id, $"Invalid input; not mapped: {linkId}");
             }
 
-            if (!_identityLinker.TryGetLinkedSteamUser(e.Author.Id, out var steamId))
+            if (!_identityLinker.TryGetLinkedSteamUser(user.Id, out var steamId))
             {
-                await e.Channel.SendMessageAsync("Alarm not linked to you; type `!alarm link` in game to get started");
+                await channel.MentionAsync(user.Id, "Alarm not linked to you; type `!alarm link` in game to get started");
                 return;
             }
 
             var playerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(steamId);
 
-            if (msg.Contains("stop") || msg.Contains("mute"))
-            {
-                _config.Mute(steamId);
-                await e.Channel.SendMessageAsync($"Alarm muted to \"{playerName}\" ({steamId})");
-                return;
-            }
-
             if (msg.Contains("start") || msg.Contains("unmute"))
             {
                 _config.Unmute(steamId);
-                await e.Channel.SendMessageAsync($"Alarm started for \"{playerName}\" ({steamId})");
+                await channel.MentionAsync(user.Id, $"Alarm started by \"{playerName}\"");
                 return;
             }
 
-            await e.Channel.SendMessageAsync("wot?");
+            if (msg.Contains("stop") || msg.Contains("mute"))
+            {
+                _config.Mute(steamId);
+                await channel.MentionAsync(user.Id, $"Alarm stopped by \"{playerName}\"");
+                return;
+            }
+
+            await channel.MentionAsync(user.Id, "wot?");
         }
 
         public async Task SendAlarmsAsync(IEnumerable<ProximityAlarm> allAlarms)

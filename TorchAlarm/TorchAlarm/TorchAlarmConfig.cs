@@ -23,7 +23,7 @@ namespace TorchAlarm
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
         int _scanInterval = 20;
-        int _proximityThreshold = 5000;
+        int _proximityThreshold = 10000;
         string _token = "empty";
         bool _enable = true;
         List<ulong> _mutedSteamIds = new List<ulong>();
@@ -132,11 +132,11 @@ namespace TorchAlarm
         {
             if (_mutedSteamIds.Remove(steamId))
             {
-                Log.Info($"muted: {steamId}");
+                Log.Info($"unmuted: {steamId}");
                 OnPropertyChanged(nameof(MutedSteamIds));
             }
         }
 
-        public double BufferDistance => (double) _proximityThreshold / _bufferCount;
+        double ProximityAlarmBuffer.IConfig.BufferDistance => (double) _proximityThreshold / _bufferCount;
     }
 }

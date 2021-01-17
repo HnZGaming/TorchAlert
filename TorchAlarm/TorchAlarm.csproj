@@ -202,6 +202,7 @@
         <Compile Include="TorchAlarm.Discord\DiscordIdentityLink.cs" />
         <Compile Include="TorchAlarm.Discord\DiscordIdentityLinkDb.cs" />
         <Compile Include="TorchAlarm.Discord\DiscordIdentityLinker.cs" />
+        <Compile Include="TorchAlarm.Discord\DiscordUtils.cs" />
         <Compile Include="TorchAlarm\TorchAlarmCommandModule.cs" />
         <Compile Include="TorchAlarm\TorchAlarmConfig.cs" />
         <Compile Include="TorchAlarm\TorchAlarmPlugin.cs" />
