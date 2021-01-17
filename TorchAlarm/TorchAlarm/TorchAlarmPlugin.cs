@@ -47,7 +47,7 @@ namespace TorchAlarm
             _config = Persistent<TorchAlarmConfig>.Load(configPath);
             Config.PropertyChanged += OnConfigPropertyChanged;
 
-            _fileLoggingConfigurator = new FileLoggingConfigurator(nameof(TorchAlarm), "TorchAlarm.*", Config.LogFilePath);
+            _fileLoggingConfigurator = new FileLoggingConfigurator(nameof(TorchAlarm), new[] {"TorchAlarm.*", "Discord.Net.*"}, Config.LogFilePath);
             _fileLoggingConfigurator.Initialize();
             _fileLoggingConfigurator.Reconfigure(Config);
 
@@ -59,7 +59,7 @@ namespace TorchAlarm
             _proximityScanner = new ProximityScanner(Config);
             _alarmMaker = new ProximityAlarmMaker();
             _identityLinker = new DiscordIdentityLinker(db);
-            _discordClient = new DiscordAlarmClient(Config.Token, Config, _identityLinker);
+            _discordClient = new DiscordAlarmClient(Config, _identityLinker);
 
             Log.Info("initialized");
         }
@@ -70,15 +70,8 @@ namespace TorchAlarm
             {
                 if (args.PropertyName == nameof(TorchAlarmConfig.Token))
                 {
-                    _discordClient = new DiscordAlarmClient(Config.Token, Config, _identityLinker);
-                    await _discordClient.ConnectAsync();
-                    return;
-                }
-
-                if (args.PropertyName == nameof(TorchAlarmConfig.GuildId))
-                {
-                    await _discordClient.LoadGuildAsync(Config.GuildId);
-                    return;
+                    _discordClient = new DiscordAlarmClient(Config, _identityLinker);
+                    await _discordClient.InitializeAsync();
                 }
             }
             catch (Exception e)
@@ -98,8 +91,7 @@ namespace TorchAlarm
 
             try
             {
-                await _discordClient.ConnectAsync();
-                await _discordClient.LoadGuildAsync(Config.GuildId);
+                await _discordClient.InitializeAsync();
                 Log.Info("discord connected");
             }
             catch (Exception e)
