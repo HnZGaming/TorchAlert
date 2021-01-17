@@ -18,8 +18,6 @@ namespace TorchAlarm.Discord
     {
         public interface IConfig
         {
-            string Token { get; }
-            ulong GuildId { get; }
             string AlarmFormat { get; }
 
             void Mute(ulong steamId);
@@ -33,7 +31,7 @@ namespace TorchAlarm.Discord
         readonly Dictionary<ulong, DiscordMember> _discordMembers;
         DiscordGuild _guild;
 
-        public DiscordAlarmClient(IConfig config, DiscordIdentityLinker identityLinker)
+        public DiscordAlarmClient(string token, IConfig config, DiscordIdentityLinker identityLinker)
         {
             _config = config;
             _identityLinker = identityLinker;
@@ -41,36 +39,51 @@ namespace TorchAlarm.Discord
 
             var discordConfig = new DiscordConfiguration
             {
-                AutoReconnect = true,
-                HttpTimeout = 10.Seconds(),
-                LogLevel = DSharpPlus.LogLevel.Info,
-                ReconnectIndefinitely = true,
-                Token = _config.Token,
+                Token = token,
                 TokenType = TokenType.Bot,
+                AutoReconnect = true,
+                ReconnectIndefinitely = false,
+                HttpTimeout = 5.Seconds(),
             };
 
             _client = new DiscordClient(discordConfig);
             _client.MessageCreated += OnMessageCreatedAsync;
         }
 
+        public bool IsReady { get; private set; }
+
         public async Task ConnectAsync()
         {
-            await _client.ConnectAsync();
+            Log.Info("connecting...");
 
-            _guild = await _client.GetGuildAsync(_config.GuildId);
+            var activity = new DiscordActivity("Watching...", ActivityType.Playing);
+
+            await _client
+                .ConnectAsync(activity, UserStatus.Online) // throws if already connected
+                .Timeout(5.Seconds()); // because the shit code won't give up
+
+            Log.Info("connected");
+        }
+
+        public async Task LoadGuildAsync(ulong guildId)
+        {
+            Log.Info("loading guild...");
+            IsReady = false;
+
+            _guild = await _client.GetGuildAsync(guildId);
             if (_guild == null)
             {
                 throw new Exception("guild not found");
             }
 
-            var activity = new DiscordActivity("Watching...", ActivityType.Playing);
-            await _client.UpdateStatusAsync(activity, UserStatus.Online);
+            IsReady = true;
+            Log.Info("loaded guild");
         }
 
         public void Dispose()
         {
             _client.MessageCreated -= OnMessageCreatedAsync;
-            _client.Dispose();
+            //_client.Dispose(); // commented out because the shit code calls Dispose on GC
             _discordMembers.Clear();
         }
 

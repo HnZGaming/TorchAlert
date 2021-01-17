@@ -23,12 +23,12 @@ namespace TorchAlarm
 
         int _scanInterval = 20;
         int _proximityThreshold = 5000;
-        string _token;
+        string _token = "empty";
         bool _enable = true;
         List<ulong> _mutedSteamIds;
         ulong _guildId;
         string _alarmFormat = "{alarm_name}: {grid_name} approaching in {distance} meters, owned by [faction_tag] {owner_name}";
-        string _logFilePath = $"Logs/{nameof(TorchAlarm)}.log";
+        string _logFilePath = "Logs/TorchAlarm-${shortdate}.log";
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
 

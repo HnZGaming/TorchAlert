@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -25,7 +26,7 @@ namespace TorchAlarm
         ProximityScanner _proximityScanner;
         ProximityAlarmMaker _alarmMaker;
         DiscordAlarmClient _discordClient;
-        DiscordIdentityLinker _idendityLinker;
+        DiscordIdentityLinker _identityLinker;
 
         public TorchAlarmConfig Config => _config.Data;
 
@@ -44,18 +45,46 @@ namespace TorchAlarm
 
             var configPath = this.MakeConfigFilePath();
             _config = Persistent<TorchAlarmConfig>.Load(configPath);
+            Config.PropertyChanged += OnConfigPropertyChanged;
 
             _fileLoggingConfigurator = new FileLoggingConfigurator(nameof(TorchAlarm), "TorchAlarm.*", Config.LogFilePath);
             _fileLoggingConfigurator.Initialize();
             _fileLoggingConfigurator.Reconfigure(Config);
 
-            var linkerFilePath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.sqlite");
-            _idendityLinker = new DiscordIdentityLinker(linkerFilePath);
+            var dbPath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.json");
+            var db = new StupidDb(dbPath);
+            db.Read();
 
             _defenderGridCollector = new GridInfoCollector(Config);
             _proximityScanner = new ProximityScanner(Config);
             _alarmMaker = new ProximityAlarmMaker();
-            _discordClient = new DiscordAlarmClient(Config, _idendityLinker);
+            _identityLinker = new DiscordIdentityLinker(db);
+            _discordClient = new DiscordAlarmClient(Config.Token, Config, _identityLinker);
+
+            Log.Info("initialized");
+        }
+
+        async void OnConfigPropertyChanged(object sender, PropertyChangedEventArgs args)
+        {
+            try
+            {
+                if (args.PropertyName == nameof(TorchAlarmConfig.Token))
+                {
+                    _discordClient = new DiscordAlarmClient(Config.Token, Config, _identityLinker);
+                    await _discordClient.ConnectAsync();
+                    return;
+                }
+
+                if (args.PropertyName == nameof(TorchAlarmConfig.GuildId))
+                {
+                    await _discordClient.LoadGuildAsync(Config.GuildId);
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warn(e, "failed applying config changes");
+            }
         }
 
         void OnGameLoaded()
@@ -65,14 +94,22 @@ namespace TorchAlarm
 
         async Task MainLoop(CancellationToken cancellationToken)
         {
-            Log.Debug("Start main loop");
+            Log.Info("start main loop");
 
-            _idendityLinker.Initialize();
-            await _discordClient.ConnectAsync();
+            try
+            {
+                await _discordClient.ConnectAsync();
+                await _discordClient.LoadGuildAsync(Config.GuildId);
+                Log.Info("discord connected");
+            }
+            catch (Exception e)
+            {
+                Log.Warn(e, "failed connecting discord; dry-run until config is changed");
+            }
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (!Config.Enable)
+                if (!Config.Enable || !_discordClient.IsReady)
                 {
                     await Task.Delay(10.Seconds(), cancellationToken);
                     continue;
@@ -80,7 +117,7 @@ namespace TorchAlarm
 
                 try
                 {
-                    Log.Debug("Start main loop interval");
+                    Log.Debug("start main loop interval");
 
                     var grids = _defenderGridCollector.CollectDefenderGrids();
                     var scan = _proximityScanner.ScanProximity(grids);
@@ -93,7 +130,7 @@ namespace TorchAlarm
 
                     await _discordClient.SendAlarmsAsync(alarms);
 
-                    Log.Debug("Finished main loop interval");
+                    Log.Debug("finished main loop interval");
                 }
                 catch (OperationCanceledException)
                 {
@@ -118,11 +155,13 @@ namespace TorchAlarm
             _discordClient?.Dispose();
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
+            Config.PropertyChanged -= OnConfigPropertyChanged;
+            _config.Dispose();
         }
 
         public int GenerateLinkId(ulong steamId)
         {
-            return _idendityLinker.GenerateLinkId(steamId);
+            return _identityLinker.GenerateLinkId(steamId);
         }
     }
 }

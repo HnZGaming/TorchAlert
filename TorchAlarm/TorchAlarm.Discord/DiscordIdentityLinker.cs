@@ -3,29 +3,23 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using NLog;
 using Sandbox.Game.World;
-using SQLite;
 using Utils.General;
 
 namespace TorchAlarm.Discord
 {
     public sealed class DiscordIdentityLinker
     {
+        const string DbTableName = "links";
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        readonly SQLiteConnection _db;
+        readonly StupidDb _db;
         readonly Dictionary<int, ulong> _linkIds;
         int _nextLinkId;
 
-        public DiscordIdentityLinker(string filePath)
+        public DiscordIdentityLinker(StupidDb db)
         {
-            _db = new SQLiteConnection(filePath);
+            _db = db;
             _linkIds = new Dictionary<int, ulong>();
             _nextLinkId = new Random().Next(0, int.MaxValue / 2);
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Initialize()
-        {
-            _db.CreateTable<DiscordIdentityLink>();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -88,21 +82,41 @@ namespace TorchAlarm.Discord
             link.SteamId = steamId;
             link.DiscordId = discordId;
 
-            _db.InsertOrReplace(link);
+            _db.Insert(DbTableName, new[] {link});
 
             Log.Info($"Made link: {link}");
         }
 
         bool TryGetLinkBySteamId(ulong steamId, out DiscordIdentityLink link)
         {
-            var entities = _db.Query<DiscordIdentityLink>($"select * where {nameof(DiscordIdentityLink.SteamId)} = ?", steamId);
-            return entities.TryGetFirst(out link);
+            var links = _db.Query<DiscordIdentityLink>(DbTableName);
+            foreach (var lk in links)
+            {
+                if (lk.SteamId == steamId)
+                {
+                    link = lk;
+                    return true;
+                }
+            }
+
+            link = null;
+            return false;
         }
 
         bool TryGetLinkByDiscordId(ulong discordId, out DiscordIdentityLink link)
         {
-            var entities = _db.Query<DiscordIdentityLink>($"select * where {nameof(DiscordIdentityLink.DiscordId)} = ?", discordId);
-            return entities.TryGetFirst(out link);
+            var links = _db.Query<DiscordIdentityLink>(DbTableName);
+            foreach (var lk in links)
+            {
+                if (lk.DiscordId == discordId)
+                {
+                    link = lk;
+                    return true;
+                }
+            }
+
+            link = null;
+            return false;
         }
     }
 }
