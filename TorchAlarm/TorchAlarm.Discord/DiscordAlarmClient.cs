@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
+using Discord;
+using Discord.WebSocket;
 using NLog;
 using Sandbox.Game.World;
 using TorchAlarm.Core;
@@ -18,6 +17,7 @@ namespace TorchAlarm.Discord
     {
         public interface IConfig
         {
+            string Token { get; }
             string AlarmFormat { get; }
 
             void Mute(ulong steamId);
@@ -26,74 +26,55 @@ namespace TorchAlarm.Discord
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
-        readonly DiscordClient _client;
+        readonly DiscordSocketClient _client;
         readonly DiscordIdentityLinker _identityLinker;
-        readonly Dictionary<ulong, DiscordMember> _discordMembers;
-        DiscordGuild _guild;
 
-        public DiscordAlarmClient(string token, IConfig config, DiscordIdentityLinker identityLinker)
+        public DiscordAlarmClient(IConfig config, DiscordIdentityLinker identityLinker)
         {
             _config = config;
             _identityLinker = identityLinker;
-            _discordMembers = new Dictionary<ulong, DiscordMember>();
 
-            var discordConfig = new DiscordConfiguration
+            var discordConfig = new DiscordSocketConfig
             {
-                Token = token,
-                TokenType = TokenType.Bot,
-                AutoReconnect = true,
-                ReconnectIndefinitely = false,
-                HttpTimeout = 5.Seconds(),
+                LogLevel = LogSeverity.Info,
+                ConnectionTimeout = (int) 10.Seconds().TotalMilliseconds,
+                HandlerTimeout = (int) 10.Seconds().TotalMilliseconds,
             };
 
-            _client = new DiscordClient(discordConfig);
-            _client.MessageCreated += OnMessageCreatedAsync;
+            _client = new DiscordSocketClient(discordConfig);
+            _client.MessageReceived += OnMessageCreatedAsync;
         }
 
         public bool IsReady { get; private set; }
 
-        public async Task ConnectAsync()
+        public async Task InitializeAsync()
         {
             Log.Info("connecting...");
-
-            var activity = new DiscordActivity("Watching...", ActivityType.Playing);
-
-            await _client
-                .ConnectAsync(activity, UserStatus.Online) // throws if already connected
-                .Timeout(5.Seconds()); // because the shit code won't give up
-
-            Log.Info("connected");
-        }
-
-        public async Task LoadGuildAsync(ulong guildId)
-        {
-            Log.Info("loading guild...");
             IsReady = false;
 
-            _guild = await _client.GetGuildAsync(guildId);
-            if (_guild == null)
-            {
-                throw new Exception("guild not found");
-            }
+            await _client.LoginAsync(TokenType.Bot, _config.Token);
+            await _client.StartAsync();
+            await _client.SetStatusAsync(UserStatus.Online);
+            await _client.SetGameAsync("Watching...");
 
             IsReady = true;
-            Log.Info("loaded guild");
+            Log.Info("connected");
         }
 
         public void Dispose()
         {
-            _client.MessageCreated -= OnMessageCreatedAsync;
-            //_client.Dispose(); // commented out because the shit code calls Dispose on GC
-            _discordMembers.Clear();
+            _client.MessageReceived -= OnMessageCreatedAsync;
+            _client.Dispose();
         }
 
-        async Task OnMessageCreatedAsync(MessageCreateEventArgs e)
+        async Task OnMessageCreatedAsync(SocketMessage er)
         {
-            Log.Debug($"bot message received: {e.Channel.Type} \"{e.Message.Content}\"");
+            var e = er as SocketUserMessage ?? throw new Exception("invalid message type");
+            Log.Debug($"bot message received: {e.Channel.Name} \"{e.Content}\"");
 
             try
             {
-                if (e.Channel.Type == ChannelType.Private) // direct message
+                if (e.Channel is SocketDMChannel)
                 {
                     await OnPrivateMessageCreatedAsync(e);
                 }
@@ -102,16 +83,16 @@ namespace TorchAlarm.Discord
             {
                 CommandErrorResponseGenerator.LogAndRespond(this, ex, msg =>
                 {
-                    e.Message.RespondAsync(msg).Wait();
+                    e.Channel.SendMessageAsync(msg).Wait();
                 });
             }
         }
 
-        async Task OnPrivateMessageCreatedAsync(MessageCreateEventArgs e)
+        async Task OnPrivateMessageCreatedAsync(SocketUserMessage e)
         {
-            Log.Info($"bot private message received: \"{e.Message.Content}\"");
+            Log.Info($"bot private message received: \"{e.Content}\"");
 
-            var msg = e.Message.Content.ToLower();
+            var msg = e.Content.ToLower();
             if (int.TryParse(msg, out var linkId))
             {
                 Log.Info($"link id: {linkId}");
@@ -121,16 +102,16 @@ namespace TorchAlarm.Discord
                     Log.Info($"linked steam ID: {linkedSteamId}");
 
                     var linkedPlayerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(linkedSteamId);
-                    await e.Message.RespondAsync($"Alarm linked to \"{linkedPlayerName}\" ({linkedSteamId})");
+                    await e.Channel.SendMessageAsync($"Alarm linked to \"{linkedPlayerName}\" ({linkedSteamId})");
                     return;
                 }
 
-                await e.Message.RespondAsync($"Invalid input; not mapped: {linkId}");
+                await e.Channel.SendMessageAsync($"Invalid input; not mapped: {linkId}");
             }
 
             if (!_identityLinker.TryGetLinkedSteamUser(e.Author.Id, out var steamId))
             {
-                await e.Message.RespondAsync("Alarm not linked to you; type `!ta link` in game to get started");
+                await e.Channel.SendMessageAsync("Alarm not linked to you; type `!ta link` in game to get started");
                 return;
             }
 
@@ -139,18 +120,18 @@ namespace TorchAlarm.Discord
             if (msg.Contains("stop") || msg.Contains("mute"))
             {
                 _config.Mute(steamId);
-                await e.Message.RespondAsync($"Alarm muted to \"{playerName}\" ({steamId})");
+                await e.Channel.SendMessageAsync($"Alarm muted to \"{playerName}\" ({steamId})");
                 return;
             }
 
             if (msg.Contains("start") || msg.Contains("unmute"))
             {
                 _config.Unmute(steamId);
-                await e.Message.RespondAsync($"Alarm started for \"{playerName}\" ({steamId})");
+                await e.Channel.SendMessageAsync($"Alarm started for \"{playerName}\" ({steamId})");
                 return;
             }
 
-            await e.Message.RespondAsync("wot?");
+            await e.Channel.SendMessageAsync("wot?");
         }
 
         public async Task SendAlarmsAsync(IEnumerable<ProximityAlarm> allAlarms)
@@ -174,21 +155,17 @@ namespace TorchAlarm.Discord
 
             foreach (var (discordId, alarms) in linkedAlarms)
             {
-                var discordMember = await GetDiscordMemberAsync(discordId);
-                var message = MakeAlarmMessage(alarms);
-                await discordMember.SendMessageAsync(message);
+                try
+                {
+                    var discordUser = _client.GetUser(discordId);
+                    var message = MakeAlarmMessage(alarms);
+                    await discordUser.SendMessageAsync(message);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e);
+                }
             }
-        }
-
-        async Task<DiscordMember> GetDiscordMemberAsync(ulong discordId)
-        {
-            if (!_discordMembers.TryGetValue(discordId, out var discordMember))
-            {
-                discordMember = await _guild.GetMemberAsync(discordId);
-                _discordMembers[discordId] = discordMember;
-            }
-
-            return discordMember;
         }
 
         string MakeAlarmMessage(IEnumerable<ProximityAlarm> alarms)
