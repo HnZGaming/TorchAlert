@@ -153,15 +153,16 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="TorchAlarm.Core\DiscordBridge.cs" />
-        <Compile Include="TorchAlarm.Core\GridInfo.cs" />
-        <Compile Include="TorchAlarm.Core\Octree.cs" />
+        <Compile Include="TorchAlarm.Core\DefenderGridInfo.cs" />
+        <Compile Include="TorchAlarm.Core\GridInfoCollector.cs" />
+        <Compile Include="TorchAlarm.Core\OffenderGridInfo.cs" />
         <Compile Include="TorchAlarm.Core\ProximityReport.cs" />
         <Compile Include="TorchAlarm.Core\ProximityReportMaker.cs" />
         <Compile Include="TorchAlarm.Core\ProximityScanner.cs" />
         <Compile Include="TorchAlarm.Core\Proximity.cs" />
-        <Compile Include="TorchAlarm.Discord\DiscordAlarmCommandModule.cs" />
-        <Compile Include="TorchAlarm.Discord\DiscordAlarmConfig.cs" />
-        <Compile Include="TorchAlarm.Discord\DiscordAlarmPlugin.cs" />
+        <Compile Include="TorchAlarm\TorchAlarmCommandModule.cs" />
+        <Compile Include="TorchAlarm\TorchAlarmConfig.cs" />
+        <Compile Include="TorchAlarm\TorchAlarmPlugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Utils.General\AbsJsonConverter.cs" />
         <Compile Include="Utils.General\ActionDisposable.cs" />

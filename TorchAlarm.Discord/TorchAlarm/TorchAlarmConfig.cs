@@ -4,12 +4,13 @@ using Torch;
 using Torch.Views;
 using TorchAlarm.Core;
 
-namespace TorchAlarm.Discord
+namespace TorchAlarm
 {
-    public sealed class DiscordAlarmConfig :
+    public sealed class TorchAlarmConfig :
         ViewModel,
         ProximityScanner.IConfig,
-        DiscordBridge.IConfig
+        DiscordBridge.IConfig,
+        GridInfoCollector.IConfig
     {
         int _scanInterval = 20;
         int _proximityThreshold = 5000;

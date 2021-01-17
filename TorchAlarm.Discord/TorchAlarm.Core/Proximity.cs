@@ -2,21 +2,21 @@
 {
     public readonly struct Proximity
     {
-        public readonly GridInfo Grid0;
-        public readonly GridInfo Grid1;
+        public readonly DefenderGridInfo Defender;
+        public readonly OffenderGridInfo Offender;
         public readonly double Distance;
 
-        public Proximity(GridInfo g0, GridInfo g1, double distance)
+        public Proximity(DefenderGridInfo defender, OffenderGridInfo offender, double distance)
         {
-            Grid0 = g0;
-            Grid1 = g1;
+            Defender = defender;
+            Offender = offender;
             Distance = distance;
         }
 
-        public void Deconstruct(out GridInfo g0, out GridInfo g1, out double distance)
+        public void Deconstruct(out DefenderGridInfo defender, out OffenderGridInfo offender, out double distance)
         {
-            g0 = Grid0;
-            g1 = Grid1;
+            defender = Defender;
+            offender = Offender;
             distance = Distance;
         }
     }

@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using NLog;
-using Sandbox.Game.Entities;
-using Sandbox.Game.World;
 using Torch;
 using Torch.API;
 using Torch.API.Plugins;
@@ -13,20 +10,21 @@ using TorchAlarm.Core;
 using Utils.General;
 using Utils.Torch;
 
-namespace TorchAlarm.Discord
+namespace TorchAlarm
 {
-    public sealed class DiscordAlarmPlugin : TorchPluginBase, IWpfPlugin
+    public sealed class TorchAlarmPlugin : TorchPluginBase, IWpfPlugin
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
-        Persistent<DiscordAlarmConfig> _config;
+        Persistent<TorchAlarmConfig> _config;
         UserControl _userControl;
         CancellationTokenSource _cancellationTokenSource;
+        GridInfoCollector _defenderGridCollector;
         ProximityScanner _proximityScanner;
-        DiscordBridge _discordBridge;
         ProximityReportMaker _reportMaker;
+        DiscordBridge _discordBridge;
 
-        public DiscordAlarmConfig Config => _config.Data;
+        public TorchAlarmConfig Config => _config.Data;
 
         public UserControl GetControl()
         {
@@ -42,23 +40,15 @@ namespace TorchAlarm.Discord
             _cancellationTokenSource = new CancellationTokenSource();
 
             var configPath = this.MakeConfigFilePath();
-            _config = Persistent<DiscordAlarmConfig>.Load(configPath);
-        }
+            _config = Persistent<TorchAlarmConfig>.Load(configPath);
 
-        public override void Dispose()
-        {
-            base.Dispose();
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
+            _defenderGridCollector = new GridInfoCollector(Config);
+            _proximityScanner = new ProximityScanner(Config);
+            _reportMaker = new ProximityReportMaker();
         }
 
         void OnGameLoaded()
         {
-            _proximityScanner = new ProximityScanner(Config);
-            _reportMaker = new ProximityReportMaker(
-                MySession.Static.Factions,
-                MySession.Static.Players);
-
             TaskUtils.RunUntilCancelledAsync(MainLoop, _cancellationTokenSource.Token);
         }
 
@@ -74,24 +64,13 @@ namespace TorchAlarm.Discord
 
                 try
                 {
-                    // collect grids
-                    var groups = MyCubeGridGroups.Static.Logical.Groups;
-                    var grids = groups
-                        .Select(g => g.GroupData.Root)
-                        .Select(g => MakeGridInfo(g))
-                        .ToArray();
-
-                    // scan proximity
+                    var grids = _defenderGridCollector.CollectDefenderGrids();
                     var scan = _proximityScanner.ScanProximity(grids);
+                    var reports = _reportMaker.GetReports(scan);
 
-                    // collect reports
-                    _reportMaker.Clear();
-                    _reportMaker.AddRange(scan);
-
-                    // report
                     _discordBridge?.Dispose();
                     _discordBridge = new DiscordBridge(Config);
-                    await _discordBridge.Send(_reportMaker.GetReports());
+                    await _discordBridge.Send(reports);
                 }
                 catch (OperationCanceledException)
                 {
@@ -106,18 +85,15 @@ namespace TorchAlarm.Discord
             }
         }
 
-        GridInfo MakeGridInfo(MyCubeGrid grid)
-        {
-            return new GridInfo(
-                grid.EntityId,
-                grid.DisplayName,
-                MySession.Static.Factions.GetOwnerFactionIdOrNull(grid),
-                grid.PositionComp.GetPosition(),
-                grid.IsStatic);
-        }
-
         void OnGameUnloading()
         {
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
         }
     }
 }

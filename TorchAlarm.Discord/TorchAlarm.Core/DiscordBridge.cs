@@ -12,7 +12,6 @@ namespace TorchAlarm.Core
         public interface IConfig
         {
             string Token { get; }
-            bool IsMuted(ulong steamId);
         }
 
         readonly IConfig _config;
@@ -42,8 +41,6 @@ namespace TorchAlarm.Core
 
         public async Task Send(IEnumerable<ProximityReport> reports)
         {
-            reports = reports.Where(r => !_config.IsMuted(r.SteamId));
-
             await _client.ConnectAsync();
         }
     }

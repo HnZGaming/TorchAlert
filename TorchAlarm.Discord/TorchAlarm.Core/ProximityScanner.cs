@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using Sandbox.Game.Entities;
+using Sandbox.Game.World;
+using Utils.Torch;
+using VRage.Game.Entity;
 using VRageMath;
 
 namespace TorchAlarm.Core
@@ -20,60 +23,35 @@ namespace TorchAlarm.Core
             _config = config;
         }
 
-        public IEnumerable<Proximity> ScanProximity(IEnumerable<GridInfo> grids)
+        public IEnumerable<Proximity> ScanProximity(IEnumerable<DefenderGridInfo> defenders)
         {
-            if (grids.Take(3).Count() < 3)
+            var tmpNearEntities = new List<MyEntity>();
+
+            foreach (var defender in defenders)
             {
-                return ScanProximityInternal(grids);
-            }
+                var lookout = _config.ProximityThreshold * 10;
+                var sphere = new BoundingSphereD(defender.Position, lookout);
+                var bb = BoundingBoxD.CreateFromSphere(sphere);
+                var obb = MyOrientedBoundingBoxD.CreateFromBoundingBox(bb);
+                MyGamePruningStructure.GetAllEntitiesInOBB(ref obb, tmpNearEntities);
 
-            // get the bound for octree
-            var positions = grids.Select(g => g.Position);
-            var box = BoundingBoxD.CreateFromPoints(positions);
-            var boxSize = box.Size;
-            var biggestLength = Math.Max(Math.Max(boxSize.X, boxSize.Y), boxSize.Z);
-            box.InflateToMinimum(biggestLength); // same length in all axes
-            var boxLength = box.Size.X;
-
-            var minSectionLength = _config.ProximityThreshold * 5;
-            var depth = GetOctreeDepth(boxLength, minSectionLength);
-            var octree = new Octree<GridInfo>(depth);
-            foreach (var grid in grids)
-            {
-                octree.Add(grid.Position, grid);
-            }
-
-            return octree
-                .GetLeaves()
-                .SelectMany(s => ScanProximityInternal(s));
-        }
-
-        IEnumerable<Proximity> ScanProximityInternal(IEnumerable<GridInfo> grids)
-        {
-            foreach (var g0 in grids)
-            foreach (var g1 in grids)
-            {
-                if (g0.GridId == g1.GridId) continue;
-
-                var distance = Vector3D.Distance(g0.Position, g1.Position);
-                if (distance < _config.ProximityThreshold)
+                foreach (var entity in tmpNearEntities)
                 {
-                    yield return new Proximity(g0, g1, distance);
+                    if (!(entity is MyCubeGrid nearGrid)) continue;
+                    if (nearGrid.EntityId == defender.GridId) continue;
+
+                    var position = nearGrid.PositionComp.GetPosition();
+                    var distance = Vector3D.Distance(defender.Position, position);
+                    if (distance > _config.ProximityThreshold) continue;
+
+                    var factionId = MySession.Static.Factions.GetOwnerFactionIdOrNull(nearGrid);
+                    var gridInfo = new OffenderGridInfo(nearGrid.EntityId, factionId);
+                    var proximity = new Proximity(defender, gridInfo, distance);
+                    yield return proximity;
                 }
-            }
-        }
 
-        static int GetOctreeDepth(double rootLength, double minLength)
-        {
-            var currentLength = rootLength;
-            var depth = 0;
-            while (currentLength > minLength)
-            {
-                currentLength /= 2;
-                depth += 1;
+                tmpNearEntities.Clear();
             }
-
-            return depth;
         }
     }
 }

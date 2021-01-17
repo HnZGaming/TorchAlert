@@ -3,12 +3,12 @@ using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace TorchAlarm.Discord
+namespace TorchAlarm
 {
     [Category("da")]
-    public sealed class DiscordAlarmCommandModule : CommandModule
+    public sealed class TorchAlarmCommandModule : CommandModule
     {
-        DiscordAlarmPlugin Plugin => (DiscordAlarmPlugin) Context.Plugin;
+        TorchAlarmPlugin Plugin => (TorchAlarmPlugin) Context.Plugin;
 
         [Command("mute")]
         [Permission(MyPromoteLevel.None)]
