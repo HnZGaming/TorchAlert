@@ -49,6 +49,55 @@ namespace TorchAlert
             Context.Respond("Sent mock alerts");
         });
 
+        [Command("enable")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void Enable() => this.CatchAndReport(() =>
+        {
+            Plugin.Config.Enable = true;
+        });
+
+        [Command("disable")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void Disable() => this.CatchAndReport(() =>
+        {
+            Plugin.Config.Enable = false;
+        });
+
+        [Command("token")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void SetToken(string token) => this.CatchAndReport(() =>
+        {
+            Plugin.Config.Token = token;
+        });
+
+        [Command("scan_interval")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void SetScanInterval(int scanInterval) => this.CatchAndReport(() =>
+        {
+            Plugin.Config.ScanInterval = scanInterval;
+        });
+
+        [Command("scan_distance")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void SetScanDistance(int scanDistance) => this.CatchAndReport(() =>
+        {
+            Plugin.Config.ProximityThreshold = scanDistance;
+        });
+
+        [Command("buffer")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void SetBuffer(int buffer) => this.CatchAndReport(() =>
+        {
+            Plugin.Config.BufferCount = buffer;
+        });
+
+        [Command("format")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void SetFormat(string format) => this.CatchAndReport(() =>
+        {
+            Plugin.Config.AlertFormat = format;
+        });
+
         ulong GetArgPlayerSteamId()
         {
             if (Context.Player != null)

@@ -24,6 +24,7 @@ namespace TorchAlert
 
         int _scanInterval = 20;
         int _proximityThreshold = 10000;
+        int _bufferCount = 3;
         string _token = "empty";
         bool _enable = true;
         List<ulong> _mutedSteamIds = new List<ulong>();
@@ -31,7 +32,6 @@ namespace TorchAlert
         string _logFilePath = "Logs/TorchAlert-${shortdate}.log";
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
-        int _bufferCount = 3;
 
         [XmlElement("Enable")]
         [Display(Name = "Enable", GroupName = OpGroupName)]

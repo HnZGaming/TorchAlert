@@ -47,7 +47,11 @@ woo woo
 * Show/hide console logs
 * Enable/disable trace logs
 
-Note no config requires a restart
+Note:
+
+* Most of configs can be set via admin command (see `!longhelp`)
+* **No config requires a restart**
+* `!alert mock <steam id>` to debug the alert message format with a mock alert
 
 ## Bug Fix & Feature Requests
 
