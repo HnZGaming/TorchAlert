@@ -13,6 +13,12 @@ Players will be notified on Discord whenever UFO approaches their base.
 1. Invite the bot to your Discord server
 1. Give it a role & show it on the right pane
 
+## Bot Icon
+
+![bot icon](docs/icon.png)
+
+woo woo
+
 ## Setup (Plugin)
 
 1. Grab the binary in [Torch plugin repository](https://torchapi.net/plugins/item/5a486edf-d677-4c5d-a4d7-9015dd9fb20b)
