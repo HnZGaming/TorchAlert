@@ -64,6 +64,7 @@ namespace TorchAlert.Discord
             if (_linkIds.TryGetValue(linkId, out steamId))
             {
                 _db.MakeLink(steamId, discordId);
+                _linkIds.Remove(linkId);
                 return true;
             }
 
