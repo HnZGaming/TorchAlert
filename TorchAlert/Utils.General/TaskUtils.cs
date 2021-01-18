@@ -47,5 +47,15 @@ namespace Utils.General
                 }
             }, canceller);
         }
+
+        public static async Task Timeout(this Task self, TimeSpan timeout)
+        {
+            var timeoutTask = Task.Delay(timeout);
+            var completeTask = await Task.WhenAny(self, timeoutTask);
+            if (completeTask != self)
+            {
+                throw new TimeoutException();
+            }
+        }
     }
 }
