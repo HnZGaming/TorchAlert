@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using NLog;
 using Sandbox.Game.World;
 
-namespace TorchAlarm.Discord
+namespace TorchAlert.Discord
 {
     public sealed class DiscordIdentityLinker
     {

@@ -2,12 +2,12 @@
 
 <PluginManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-  <Name>Torch Alarm</Name>
+  <Name>Torch Alert</Name>
 
   <Guid>5a486edf-d677-4c5d-a4d7-9015dd9fb20b</Guid>
 
   <Repository>None</Repository>
 
-  <Version>v1.0.7688.15713</Version>
+  <Version>v1.0.7688.16169</Version>
 
 </PluginManifest>

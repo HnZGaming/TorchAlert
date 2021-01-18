@@ -1,8 +1,8 @@
-﻿namespace TorchAlarm.Core
+﻿namespace TorchAlert.Core
 {
-    public sealed class ProximityAlarm
+    public sealed class ProximityAlert
     {
-        public ProximityAlarm(ulong steamId, long gridId, string gridName, double distance, OffenderGridInfo offender)
+        public ProximityAlert(ulong steamId, long gridId, string gridName, double distance, OffenderGridInfo offender)
         {
             SteamId = steamId;
             GridId = gridId;

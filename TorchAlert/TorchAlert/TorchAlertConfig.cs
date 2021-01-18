@@ -3,19 +3,19 @@ using System.Xml.Serialization;
 using NLog;
 using Torch;
 using Torch.Views;
-using TorchAlarm.Core;
-using TorchAlarm.Discord;
+using TorchAlert.Core;
+using TorchAlert.Discord;
 using Utils.General;
 
-namespace TorchAlarm
+namespace TorchAlert
 {
-    public sealed class TorchAlarmConfig :
+    public sealed class TorchAlertConfig :
         ViewModel,
         ProximityScanner.IConfig,
-        DiscordAlarmClient.IConfig,
+        DiscordAlertClient.IConfig,
         GridInfoCollector.IConfig,
         FileLoggingConfigurator.IConfig,
-        ProximityAlarmBuffer.IConfig
+        ProximityAlertBuffer.IConfig
     {
         const string OpGroupName = "Operation";
         const string LogGroupName = "Logging";
@@ -27,8 +27,8 @@ namespace TorchAlarm
         string _token = "empty";
         bool _enable = true;
         List<ulong> _mutedSteamIds = new List<ulong>();
-        string _alarmFormat = "{alarm_name}: spotted \"{grid_name}\" in {distance} meters, owned by [{faction_tag}] {owner_name}";
-        string _logFilePath = "Logs/TorchAlarm-${shortdate}.log";
+        string _alertFormat = "{alert_name}: spotted \"{grid_name}\" in {distance} meters, owned by [{faction_tag}] {owner_name}";
+        string _logFilePath = "Logs/TorchAlert-${shortdate}.log";
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
         int _bufferCount = 3;
@@ -73,12 +73,12 @@ namespace TorchAlarm
             set => SetValue(ref _token, value);
         }
 
-        [XmlElement("AlarmFormat")]
-        [Display(Name = "Alarm format", GroupName = DiscordGroupName)]
-        public string AlarmFormat
+        [XmlElement("AlertFormat")]
+        [Display(Name = "Alert format", GroupName = DiscordGroupName)]
+        public string AlertFormat
         {
-            get => _alarmFormat;
-            set => SetValue(ref _alarmFormat, value);
+            get => _alertFormat;
+            set => SetValue(ref _alertFormat, value);
         }
 
         [XmlElement("MutedSteamIds")]
@@ -137,6 +137,6 @@ namespace TorchAlarm
             }
         }
 
-        double ProximityAlarmBuffer.IConfig.BufferDistance => (double) _proximityThreshold / _bufferCount;
+        double ProximityAlertBuffer.IConfig.BufferDistance => (double) _proximityThreshold / _bufferCount;
     }
 }

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 
-namespace TorchAlarm.Discord
+namespace TorchAlert.Discord
 {
     public static class DiscordUtils
     {

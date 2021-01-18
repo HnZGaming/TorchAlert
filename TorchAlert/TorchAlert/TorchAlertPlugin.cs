@@ -8,30 +8,30 @@ using NLog;
 using Torch;
 using Torch.API;
 using Torch.API.Plugins;
-using TorchAlarm.Core;
-using TorchAlarm.Discord;
+using TorchAlert.Core;
+using TorchAlert.Discord;
 using Utils.General;
 using Utils.Torch;
 
-namespace TorchAlarm
+namespace TorchAlert
 {
-    public sealed class TorchAlarmPlugin : TorchPluginBase, IWpfPlugin
+    public sealed class TorchAlertPlugin : TorchPluginBase, IWpfPlugin
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
-        Persistent<TorchAlarmConfig> _config;
+        Persistent<TorchAlertConfig> _config;
         UserControl _userControl;
         FileLoggingConfigurator _fileLoggingConfigurator;
         CancellationTokenSource _cancellationTokenSource;
         GridInfoCollector _defenderGridCollector;
         ProximityScanner _proximityScanner;
-        ProximityAlarmCreator _alarmCreator;
-        ProximityAlarmBuffer _alarmBuffer;
-        DiscordAlarmClient _discordClient;
+        ProximityAlertCreator _alertCreator;
+        ProximityAlertBuffer _alertBuffer;
+        DiscordAlertClient _discordClient;
         DiscordIdentityLinker _identityLinker;
         DiscordIdentityLinkDb _linkDb;
 
-        public TorchAlarmConfig Config => _config.Data;
+        public TorchAlertConfig Config => _config.Data;
 
         public UserControl GetControl()
         {
@@ -47,10 +47,10 @@ namespace TorchAlarm
             _cancellationTokenSource = new CancellationTokenSource();
 
             var configPath = this.MakeConfigFilePath();
-            _config = Persistent<TorchAlarmConfig>.Load(configPath);
+            _config = Persistent<TorchAlertConfig>.Load(configPath);
             Config.PropertyChanged += OnConfigPropertyChanged;
 
-            _fileLoggingConfigurator = new FileLoggingConfigurator(nameof(TorchAlarm), new[] {"TorchAlarm.*", "Discord.Net.*"}, Config.LogFilePath);
+            _fileLoggingConfigurator = new FileLoggingConfigurator(nameof(TorchAlert), new[] {"TorchAlert.*", "Discord.Net.*"}, Config.LogFilePath);
             _fileLoggingConfigurator.Initialize();
             _fileLoggingConfigurator.Configure(Config);
 
@@ -59,10 +59,10 @@ namespace TorchAlarm
 
             _defenderGridCollector = new GridInfoCollector(Config);
             _proximityScanner = new ProximityScanner(Config);
-            _alarmCreator = new ProximityAlarmCreator();
-            _alarmBuffer = new ProximityAlarmBuffer(Config);
+            _alertCreator = new ProximityAlertCreator();
+            _alertBuffer = new ProximityAlertBuffer(Config);
             _identityLinker = new DiscordIdentityLinker(_linkDb);
-            _discordClient = new DiscordAlarmClient(Config, _identityLinker);
+            _discordClient = new DiscordAlertClient(Config, _identityLinker);
 
             Log.Info("initialized");
         }
@@ -122,15 +122,15 @@ namespace TorchAlarm
                 {
                     var grids = _defenderGridCollector.CollectDefenderGrids().ToArray();
                     var scan = _proximityScanner.ScanProximity(grids).ToArray();
-                    var alarms = _alarmCreator.CreateAlarms(scan).ToArray();
-                    alarms = _alarmBuffer.Buffer(alarms).ToArray();
+                    var alerts = _alertCreator.CreateAlerts(scan).ToArray();
+                    alerts = _alertBuffer.Buffer(alerts).ToArray();
 
-                    foreach (var alarm in alarms)
+                    foreach (var alert in alerts)
                     {
-                        Log.Trace($"alarm: {alarm}");
+                        Log.Trace($"alert: {alert}");
                     }
 
-                    await _discordClient.SendAlarmsAsync(alarms);
+                    await _discordClient.SendAlertAsync(alerts);
                 }
                 catch (OperationCanceledException)
                 {

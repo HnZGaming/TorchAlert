@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TorchAlarm.Discord
+﻿namespace TorchAlert.Discord
 {
     public sealed class DiscordIdentityLink
     {

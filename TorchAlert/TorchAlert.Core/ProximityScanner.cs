@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
@@ -7,7 +6,7 @@ using Utils.Torch;
 using VRage.Game.Entity;
 using VRageMath;
 
-namespace TorchAlarm.Core
+namespace TorchAlert.Core
 {
     // must be testable
     public sealed class ProximityScanner

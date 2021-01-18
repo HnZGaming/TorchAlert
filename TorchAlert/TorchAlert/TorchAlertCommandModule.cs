@@ -6,12 +6,12 @@ using Utils.General;
 using Utils.Torch;
 using VRage.Game.ModAPI;
 
-namespace TorchAlarm
+namespace TorchAlert
 {
-    [Category("alarm")]
-    public sealed class TorchAlarmCommandModule : CommandModule
+    [Category("alert")]
+    public sealed class TorchAlertCommandModule : CommandModule
     {
-        TorchAlarmPlugin Plugin => (TorchAlarmPlugin) Context.Plugin;
+        TorchAlertPlugin Plugin => (TorchAlertPlugin) Context.Plugin;
 
         [Command("link")]
         [Permission(MyPromoteLevel.None)]
@@ -28,7 +28,7 @@ namespace TorchAlarm
         {
             var steamId = GetArgPlayerSteamId();
             Plugin.Config.Mute(steamId);
-            Context.Respond("Muted alarms");
+            Context.Respond("Muted alerts");
         });
 
         [Command("unmute")]
@@ -37,7 +37,7 @@ namespace TorchAlarm
         {
             var steamId = GetArgPlayerSteamId();
             Plugin.Config.Unmute(steamId);
-            Context.Respond("Unmuted alarms");
+            Context.Respond("Unmuted alerts");
         });
 
         ulong GetArgPlayerSteamId()

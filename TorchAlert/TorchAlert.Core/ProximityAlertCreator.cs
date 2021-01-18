@@ -5,38 +5,38 @@ using NLog;
 using Sandbox.Game.World;
 using VRage.Game;
 
-namespace TorchAlarm.Core
+namespace TorchAlert.Core
 {
-    public sealed class ProximityAlarmCreator
+    public sealed class ProximityAlertCreator
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
-        public IEnumerable<ProximityAlarm> CreateAlarms(IEnumerable<Proximity> proximities)
+        public IEnumerable<ProximityAlert> CreateAlerts(IEnumerable<Proximity> proximities)
         {
             // for each steam id, for each grid id, make a report
-            var allAlarms = new Dictionary<ulong, Dictionary<long, ProximityAlarm>>();
+            var allAlerts = new Dictionary<ulong, Dictionary<long, ProximityAlert>>();
 
             foreach (var proximity in proximities)
-            foreach (var alarm in GetProximityAlarms(proximity))
+            foreach (var alert in GetProximityAlerts(proximity))
             {
-                if (!allAlarms.TryGetValue(alarm.SteamId, out var alarms))
+                if (!allAlerts.TryGetValue(alert.SteamId, out var alerts))
                 {
-                    alarms = new Dictionary<long, ProximityAlarm>();
-                    allAlarms[alarm.SteamId] = alarms;
+                    alerts = new Dictionary<long, ProximityAlert>();
+                    allAlerts[alert.SteamId] = alerts;
                 }
 
-                alarms[proximity.Offender.GridId] = alarm;
+                alerts[proximity.Offender.GridId] = alert;
             }
 
-            foreach (var (_, alarms) in allAlarms)
-            foreach (var (_, alarm) in alarms)
+            foreach (var (_, alerts) in allAlerts)
+            foreach (var (_, alert) in alerts)
             {
-                Log.Trace($"created alarm: {alarm}");
-                yield return alarm;
+                Log.Trace($"created alert: {alert}");
+                yield return alert;
             }
         }
 
-        IEnumerable<ProximityAlarm> GetProximityAlarms(Proximity proximity)
+        IEnumerable<ProximityAlert> GetProximityAlerts(Proximity proximity)
         {
             var (defender, offender, distance) = proximity;
 
@@ -51,7 +51,7 @@ namespace TorchAlarm.Core
 
             foreach (var steamId in defender.SteamIds)
             {
-                yield return new ProximityAlarm(steamId, defender.GridId, defender.GridName, distance, offender);
+                yield return new ProximityAlert(steamId, defender.GridId, defender.GridName, distance, offender);
             }
         }
     }

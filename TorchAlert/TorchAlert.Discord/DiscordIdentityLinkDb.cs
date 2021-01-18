@@ -2,7 +2,7 @@
 using NLog;
 using Utils.General;
 
-namespace TorchAlarm.Discord
+namespace TorchAlert.Discord
 {
     public sealed class DiscordIdentityLinkDb
     {

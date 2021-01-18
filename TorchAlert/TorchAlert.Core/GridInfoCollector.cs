@@ -7,7 +7,7 @@ using Utils.General;
 using Utils.Torch;
 using VRage.Game.ModAPI;
 
-namespace TorchAlarm.Core
+namespace TorchAlert.Core
 {
     public sealed class GridInfoCollector
     {

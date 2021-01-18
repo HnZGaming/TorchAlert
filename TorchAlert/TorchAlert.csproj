@@ -7,7 +7,7 @@
         <ProjectGuid>{E3945BE3-52C6-4EC3-AD63-BFF8671C81D6}</ProjectGuid>
         <OutputType>Library</OutputType>
         <AppDesignerFolder>Properties</AppDesignerFolder>
-        <AssemblyName>TorchAlarm</AssemblyName>
+        <AssemblyName>TorchAlert</AssemblyName>
         <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
     </PropertyGroup>
@@ -190,22 +190,22 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="TorchAlarm.Core\DefenderGridInfo.cs" />
-        <Compile Include="TorchAlarm.Core\GridInfoCollector.cs" />
-        <Compile Include="TorchAlarm.Core\OffenderGridInfo.cs" />
-        <Compile Include="TorchAlarm.Core\ProximityAlarm.cs" />
-        <Compile Include="TorchAlarm.Core\ProximityAlarmBuffer.cs" />
-        <Compile Include="TorchAlarm.Core\ProximityAlarmCreator.cs" />
-        <Compile Include="TorchAlarm.Core\ProximityScanner.cs" />
-        <Compile Include="TorchAlarm.Core\Proximity.cs" />
-        <Compile Include="TorchAlarm.Discord\DiscordAlarmClient.cs" />
-        <Compile Include="TorchAlarm.Discord\DiscordIdentityLink.cs" />
-        <Compile Include="TorchAlarm.Discord\DiscordIdentityLinkDb.cs" />
-        <Compile Include="TorchAlarm.Discord\DiscordIdentityLinker.cs" />
-        <Compile Include="TorchAlarm.Discord\DiscordUtils.cs" />
-        <Compile Include="TorchAlarm\TorchAlarmCommandModule.cs" />
-        <Compile Include="TorchAlarm\TorchAlarmConfig.cs" />
-        <Compile Include="TorchAlarm\TorchAlarmPlugin.cs" />
+        <Compile Include="TorchAlert.Core\DefenderGridInfo.cs" />
+        <Compile Include="TorchAlert.Core\GridInfoCollector.cs" />
+        <Compile Include="TorchAlert.Core\OffenderGridInfo.cs" />
+        <Compile Include="TorchAlert.Core\ProximityAlert.cs" />
+        <Compile Include="TorchAlert.Core\ProximityAlertBuffer.cs" />
+        <Compile Include="TorchAlert.Core\ProximityAlertCreator.cs" />
+        <Compile Include="TorchAlert.Core\ProximityScanner.cs" />
+        <Compile Include="TorchAlert.Core\Proximity.cs" />
+        <Compile Include="TorchAlert.Discord\DiscordAlertClient.cs" />
+        <Compile Include="TorchAlert.Discord\DiscordIdentityLink.cs" />
+        <Compile Include="TorchAlert.Discord\DiscordIdentityLinkDb.cs" />
+        <Compile Include="TorchAlert.Discord\DiscordIdentityLinker.cs" />
+        <Compile Include="TorchAlert.Discord\DiscordUtils.cs" />
+        <Compile Include="TorchAlert\TorchAlertCommandModule.cs" />
+        <Compile Include="TorchAlert\TorchAlertConfig.cs" />
+        <Compile Include="TorchAlert\TorchAlertPlugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Utils.General\AbsJsonConverter.cs" />
         <Compile Include="Utils.General\ActionDisposable.cs" />

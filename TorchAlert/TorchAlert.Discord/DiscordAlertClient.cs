@@ -7,18 +7,18 @@ using Discord;
 using Discord.WebSocket;
 using NLog;
 using Sandbox.Game.World;
-using TorchAlarm.Core;
+using TorchAlert.Core;
 using Utils.General;
 using Utils.Torch;
 
-namespace TorchAlarm.Discord
+namespace TorchAlert.Discord
 {
-    public sealed class DiscordAlarmClient : IDisposable
+    public sealed class DiscordAlertClient : IDisposable
     {
         public interface IConfig
         {
             string Token { get; }
-            string AlarmFormat { get; }
+            string AlertFormat { get; }
 
             void Mute(ulong steamId);
             void Unmute(ulong steamId);
@@ -29,7 +29,7 @@ namespace TorchAlarm.Discord
         readonly DiscordSocketClient _client;
         readonly DiscordIdentityLinker _identityLinker;
 
-        public DiscordAlarmClient(IConfig config, DiscordIdentityLinker identityLinker)
+        public DiscordAlertClient(IConfig config, DiscordIdentityLinker identityLinker)
         {
             _config = config;
             _identityLinker = identityLinker;
@@ -120,7 +120,7 @@ namespace TorchAlarm.Discord
                     Log.Info($"linked steam ID: {linkedSteamId}");
 
                     var linkedPlayerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(linkedSteamId);
-                    await channel.MentionAsync(user.Id, $"Alarm linked to \"{linkedPlayerName}\". Say \"mute\" and \"unmute\" to turn on/off alarms.");
+                    await channel.MentionAsync(user.Id, $"Alert linked to \"{linkedPlayerName}\". Say \"mute\" and \"unmute\" to turn on/off alerts.");
                     return;
                 }
 
@@ -129,7 +129,7 @@ namespace TorchAlarm.Discord
 
             if (!_identityLinker.TryGetLinkedSteamUser(user.Id, out var steamId))
             {
-                await channel.MentionAsync(user.Id, "Alarm not linked to you; type `!alarm link` in game to get started");
+                await channel.MentionAsync(user.Id, "Alerts not linked to you; type `!alert link` in game to get started");
                 return;
             }
 
@@ -138,45 +138,45 @@ namespace TorchAlarm.Discord
             if (msg.Contains("start") || msg.Contains("unmute"))
             {
                 _config.Unmute(steamId);
-                await channel.MentionAsync(user.Id, $"Alarm started by \"{playerName}\"");
+                await channel.MentionAsync(user.Id, $"Alerts started by \"{playerName}\"");
                 return;
             }
 
             if (msg.Contains("stop") || msg.Contains("mute"))
             {
                 _config.Mute(steamId);
-                await channel.MentionAsync(user.Id, $"Alarm stopped by \"{playerName}\"");
+                await channel.MentionAsync(user.Id, $"Alerts stopped by \"{playerName}\"");
                 return;
             }
 
             await channel.MentionAsync(user.Id, "wot?");
         }
 
-        public async Task SendAlarmsAsync(IEnumerable<ProximityAlarm> allAlarms)
+        public async Task SendAlertAsync(IEnumerable<ProximityAlert> allAlerts)
         {
-            if (!allAlarms.Any()) return;
+            if (!allAlerts.Any()) return;
 
             // key: discord id; value: list of reports to that discord user
-            var linkedAlarms = new Dictionary<ulong, List<ProximityAlarm>>();
-            foreach (var alarm in allAlarms)
+            var linkedAlerts = new Dictionary<ulong, List<ProximityAlert>>();
+            foreach (var alert in allAlerts)
             {
-                if (_identityLinker.TryGetLinkedDiscordId(alarm.SteamId, out var discordId))
+                if (_identityLinker.TryGetLinkedDiscordId(alert.SteamId, out var discordId))
                 {
-                    linkedAlarms.Add(discordId, alarm);
-                    Log.Trace($"linked: {alarm}");
+                    linkedAlerts.Add(discordId, alert);
+                    Log.Trace($"linked: {alert}");
                 }
                 else
                 {
-                    Log.Trace($"not linked: {alarm}");
+                    Log.Trace($"not linked: {alert}");
                 }
             }
 
-            foreach (var (discordId, alarms) in linkedAlarms)
+            foreach (var (discordId, alerts) in linkedAlerts)
             {
                 try
                 {
                     var discordUser = await _client.Rest.GetUserAsync(discordId);
-                    var message = MakeAlarmMessage(alarms);
+                    var message = MakeAlertMessage(alerts);
                     await discordUser.SendMessageAsync(message);
                 }
                 catch (Exception e)
@@ -186,23 +186,23 @@ namespace TorchAlarm.Discord
             }
         }
 
-        string MakeAlarmMessage(IEnumerable<ProximityAlarm> alarms)
+        string MakeAlertMessage(IEnumerable<ProximityAlert> alerts)
         {
-            var alarmBuilder = new StringBuilder();
-            foreach (var alarm in alarms)
+            var alertBuilder = new StringBuilder();
+            foreach (var alert in alerts)
             {
-                var msg = _config.AlarmFormat
-                    .Replace("{alarm_name}", alarm.GridName)
-                    .Replace("{distance}", $"{alarm.Distance:0}")
-                    .Replace("{grid_name}", alarm.Offender.GridName)
-                    .Replace("{owner_name}", alarm.Offender.OwnerName ?? "<none>")
-                    .Replace("{faction_name}", alarm.Offender.FactionName ?? "<none>")
-                    .Replace("{faction_tag}", alarm.Offender.FactionTag ?? "<none>");
+                var msg = _config.AlertFormat
+                    .Replace("{alert_name}", alert.GridName)
+                    .Replace("{distance}", $"{alert.Distance:0}")
+                    .Replace("{grid_name}", alert.Offender.GridName)
+                    .Replace("{owner_name}", alert.Offender.OwnerName ?? "<none>")
+                    .Replace("{faction_name}", alert.Offender.FactionName ?? "<none>")
+                    .Replace("{faction_tag}", alert.Offender.FactionTag ?? "<none>");
 
-                alarmBuilder.AppendLine(msg);
+                alertBuilder.AppendLine(msg);
             }
 
-            return alarmBuilder.ToString();
+            return alertBuilder.ToString();
         }
     }
 }
