@@ -40,6 +40,15 @@ namespace TorchAlert
             Context.Respond("Unmuted alerts");
         });
 
+        [Command("mock")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void SendMockAlert() => this.CatchAndReport(async () =>
+        {
+            var steamId = GetArgPlayerSteamId();
+            await Plugin.SendMockAlert(steamId);
+            Context.Respond("Sent mock alerts");
+        });
+
         ulong GetArgPlayerSteamId()
         {
             if (Context.Player != null)

@@ -172,5 +172,14 @@ namespace TorchAlert
         {
             return _identityLinker.GenerateLinkId(steamId);
         }
+
+        public async Task SendMockAlert(ulong steamId)
+        {
+            await _discordClient.SendAlertAsync(new[]
+            {
+                new ProximityAlert(steamId, 0, "My Grid", 1000, new OffenderGridInfo(0, "Enemy Ship", "Enemy", null, "ENM", "Enemy Faction")),
+                new ProximityAlert(steamId, 0, "My Grid", 2000, new OffenderGridInfo(0, "Enemy Drone", "Enemy", null, "ENM", "Enemy Faction")),
+            });
+        }
     }
 }

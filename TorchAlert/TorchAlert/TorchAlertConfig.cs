@@ -27,7 +27,7 @@ namespace TorchAlert
         string _token = "empty";
         bool _enable = true;
         List<ulong> _mutedSteamIds = new List<ulong>();
-        string _alertFormat = "{alert_name}: spotted \"{grid_name}\" in {distance} meters, owned by [{faction_tag}] {owner_name}";
+        string _alertFormat = "{alert_name}: spotted enemy grid \"{grid_name}\" in {distance} meters, owned by [{faction_tag}] {owner_name}";
         string _logFilePath = "Logs/TorchAlert-${shortdate}.log";
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
