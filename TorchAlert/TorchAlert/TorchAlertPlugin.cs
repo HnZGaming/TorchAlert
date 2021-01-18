@@ -57,7 +57,7 @@ namespace TorchAlert
             var linkDbPath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.csv");
             _linkDb = new DiscordIdentityLinkDb(linkDbPath);
 
-            _defenderGridCollector = new GridInfoCollector(Config);
+            _defenderGridCollector = new GridInfoCollector(Config, _linkDb);
             _proximityScanner = new ProximityScanner(Config);
             _alertCreator = new ProximityAlertCreator();
             _alertBuffer = new ProximityAlertBuffer(Config);

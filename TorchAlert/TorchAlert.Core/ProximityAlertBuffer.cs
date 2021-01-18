@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using NLog;
 
 namespace TorchAlert.Core
 {
@@ -9,6 +10,7 @@ namespace TorchAlert.Core
             double BufferDistance { get; }
         }
 
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
         readonly Dictionary<(long, long), ProximityAlert> _buffer;
 
@@ -25,6 +27,7 @@ namespace TorchAlert.Core
                 var key = (alert.GridId, alert.Offender.GridId);
                 if (!_buffer.TryGetValue(key, out var lastAlert))
                 {
+                    Log.Trace($"first time alert: {alert}");
                     _buffer[key] = alert;
                     yield return alert;
                     continue;
@@ -32,9 +35,12 @@ namespace TorchAlert.Core
 
                 if (GetBufferScope(alert) != GetBufferScope(lastAlert))
                 {
+                    Log.Trace($"updated alert: {alert}");
                     _buffer[key] = alert;
                     yield return alert;
                 }
+
+                Log.Trace($"skipped alert: {alert}");
             }
         }
 

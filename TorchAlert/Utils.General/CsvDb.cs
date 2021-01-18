@@ -57,6 +57,11 @@ namespace Utils.General
             File.WriteAllLines(_filePath, lines);
         }
 
+        public bool HasValues(string key)
+        {
+            return _copy.ContainsKey(key);
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryGetValues(string key, out string[] values)
         {

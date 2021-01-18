@@ -3,6 +3,7 @@ using System.Linq;
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
+using TorchAlert.Discord;
 using Utils.General;
 using Utils.Torch;
 using VRage.Game.ModAPI;
@@ -18,10 +19,12 @@ namespace TorchAlert.Core
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
+        readonly DiscordIdentityLinkDb _links;
 
-        public GridInfoCollector(IConfig config)
+        public GridInfoCollector(IConfig config, DiscordIdentityLinkDb links)
         {
             _config = config;
+            _links = links;
         }
 
         public IEnumerable<DefenderGridInfo> CollectDefenderGrids()
@@ -47,12 +50,15 @@ namespace TorchAlert.Core
 
             var steamIds = new HashSet<ulong>();
             GetSteamIdsFromGrid(grid, steamIds);
-
-            Log.Trace($"alarm receiver steam IDs: {steamIds.ToStringSeq()}");
+            Log.Trace($"alert receiver steam IDs: {steamIds.ToStringSeq()}");
 
             steamIds.RemoveWhere(id => _config.IsMuted(id));
-
             Log.Trace($"after removing muted players: {steamIds.ToStringSeq()}");
+
+            if (!steamIds.Any()) return false;
+
+            steamIds.RemoveWhere(id => !_links.HasLink(id));
+            Log.Trace($"after removing unlinked players: {steamIds.ToStringSeq()}");
 
             if (!steamIds.Any()) return false;
 

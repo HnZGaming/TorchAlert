@@ -36,6 +36,11 @@ namespace TorchAlert.Discord
             Log.Info($"Made link: {link}");
         }
 
+        public bool HasLink(ulong steamId)
+        {
+            return _db.HasValues($"{steamId}");
+        }
+
         public bool TryGetLinkBySteamId(ulong steamId, out DiscordIdentityLink link)
         {
             foreach (var values in _db.GetAllValues())
