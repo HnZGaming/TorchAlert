@@ -31,7 +31,7 @@ woo woo
 ![user setup](docs/user_setup.png)
 
 1. Mention or DM the bot (not required)
-1. In game, type in `!alert link` (or as a command line, `!alert link <your steam id>`)
+1. In game, type `!alert link`, or in a command line `!alert link <your steam id>`
 1. Note down the link ID that the plugin spits out in response to the command
 1. Mention or DM the bot with the link ID
 1. Get some grids in and and out of the alert zone
@@ -52,3 +52,7 @@ Note no config requires a restart
 ## Bug Fix & Feature Requests
 
 Ping @ryo in #plugins on Torch Discord
+
+## Contribution
+
+I love your PR
