@@ -36,6 +36,11 @@ woo woo
 1. Mention or DM the bot with the link ID
 1. Get some grids in and and out of the alert zone
 
+## Troubleshooting (User)
+
+* To validate your Discord/Steam link, type `!alert check` in game or say `check` to the bot on Discord.
+* To link again (for whatever reason) you can simply `!alert link` again.
+
 ## Config
 
 * Discord bot token
@@ -50,7 +55,7 @@ woo woo
 Note:
 
 * Most of configs can be set via admin command (see `!longhelp`)
-* **No config requires a restart**
+* You don't need to restart Torch
 * `!alert mock <steam id>` to debug the alert message format with a mock alert
 
 ## Bug Fix & Feature Requests

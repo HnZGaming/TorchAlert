@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Sandbox;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Multiplayer;
@@ -138,6 +140,11 @@ namespace Utils.Torch
         }
 
         public static ulong CurrentGameFrameCount => MySandboxGame.Static.SimulationFrameCounter;
+
+        public static bool IsSessionThread(this Thread self)
+        {
+            return self.ManagedThreadId == MySandboxGame.Static.UpdateThread.ManagedThreadId;
+        }
 
         public static void SendAddGps(this MyGpsCollection self, long identityId, MyGps gps, bool playSound)
         {

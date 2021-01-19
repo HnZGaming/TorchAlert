@@ -93,7 +93,15 @@ namespace Utils.General
             }
         }
 
-        public static IEnumerable<T> FilterUniqueByKey<K, T>(this IEnumerable<T> self, Func<T, K> makeKey)
+        public static void AddRange<K, V>(this IDictionary<K, V> self, IEnumerable<(K, V)> other)
+        {
+            foreach (var (key, value) in other)
+            {
+                self[key] = value;
+            }
+        }
+
+        public static IEnumerable<T> GroupSingletonBy<K, T>(this IEnumerable<T> self, Func<T, K> makeKey)
         {
             var dic = new HashSet<K>();
             foreach (var t in self)
@@ -123,6 +131,21 @@ namespace Utils.General
         public static IReadOnlyDictionary<K, V> ToDictionary<K, V>(this IEnumerable<(K, V)> self)
         {
             return self.ToDictionary(p => p.Item1, p => p.Item2);
+        }
+
+        public static IEnumerable<T> GetExceptWith<T>(this IEnumerable<T> self, IEnumerable<T> other)
+        {
+            var selfSet = self as ISet<T> ?? new HashSet<T>(self);
+            selfSet.ExceptWith(other);
+            return selfSet;
+        }
+
+        public static void RemoveKeys<K, V>(this IDictionary<K, V> self, IEnumerable<K> keys)
+        {
+            foreach (var key in keys)
+            {
+                self.Remove(key);
+            }
         }
 
         public static void Add<K, V, C>(this IDictionary<K, C> self, K key, V element) where C : ICollection<V>, new()
