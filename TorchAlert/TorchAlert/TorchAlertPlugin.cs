@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using NLog;
 using Torch;
 using Torch.API;
+using Torch.API.Managers;
 using Torch.API.Plugins;
 using TorchAlert.Core;
 using TorchAlert.Discord;
@@ -62,6 +63,7 @@ namespace TorchAlert
             _alertCreator = new ProximityAlertCreator();
             _alertBuffer = new ProximityAlertBuffer(Config);
             _identityLinker = new DiscordIdentityLinker(_linkDb);
+
             _discordClient = new DiscordAlertClient(Config, _identityLinker);
 
             Log.Info("initialized");
@@ -94,14 +96,16 @@ namespace TorchAlert
 
         void OnGameLoaded()
         {
+            var chatManager = Torch.CurrentSession.Managers.GetManager<IChatManagerServer>();
+            _discordClient.Initialize(chatManager);
+
+            _linkDb.Initialize();
             TaskUtils.RunUntilCancelledAsync(MainLoop, _cancellationTokenSource.Token).Forget(Log);
         }
 
         async Task MainLoop(CancellationToken cancellationToken)
         {
             Log.Info("start main loop");
-
-            _linkDb.Initialize();
 
             if (Config.Enable)
             {
@@ -150,7 +154,7 @@ namespace TorchAlert
         {
             try
             {
-                await _discordClient.InitializeAsync();
+                await _discordClient.ConnectAsnc();
                 Log.Info("discord connected");
             }
             catch (Exception e)
@@ -173,6 +177,16 @@ namespace TorchAlert
             return _identityLinker.GenerateLinkId(steamId);
         }
 
+        public async Task<(bool, string)> TryGetLinkedDiscordUserName(ulong steamId)
+        {
+            if (!_identityLinker.TryGetLinkedDiscordId(steamId, out var discordId))
+            {
+                return (false, default);
+            }
+
+            return await _discordClient.TryGetDiscordUserName(discordId);
+        }
+
         public async Task SendMockAlert(ulong steamId)
         {
             await _discordClient.SendAlertAsync(new[]
@@ -180,6 +194,16 @@ namespace TorchAlert
                 new ProximityAlert(steamId, 0, "My Grid", 1000, new OffenderGridInfo(0, "Enemy Ship", "Enemy", null, "ENM", "Enemy Faction")),
                 new ProximityAlert(steamId, 0, "My Grid", 2000, new OffenderGridInfo(0, "Enemy Drone", "Enemy", null, "ENM", "Enemy Faction")),
             });
+        }
+
+        public async Task SendDiscordMessageAsync(ulong steamId, string message)
+        {
+            if (!_identityLinker.TryGetLinkedDiscordId(steamId, out var discordId))
+            {
+                throw new Exception($"Discord user not linked to {steamId}");
+            }
+
+            await _discordClient.SendMessageAsync(discordId, message);
         }
     }
 }

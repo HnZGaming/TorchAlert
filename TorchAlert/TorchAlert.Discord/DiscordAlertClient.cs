@@ -7,6 +7,7 @@ using Discord;
 using Discord.WebSocket;
 using NLog;
 using Sandbox.Game.World;
+using Torch.API.Managers;
 using TorchAlert.Core;
 using Utils.General;
 using Utils.Torch;
@@ -28,6 +29,7 @@ namespace TorchAlert.Discord
         readonly IConfig _config;
         readonly DiscordSocketClient _client;
         readonly DiscordIdentityLinker _identityLinker;
+        IChatManagerServer _chatManager;
 
         public DiscordAlertClient(IConfig config, DiscordIdentityLinker identityLinker)
         {
@@ -47,7 +49,12 @@ namespace TorchAlert.Discord
 
         public bool IsReady { get; private set; }
 
-        public async Task InitializeAsync()
+        public void Initialize(IChatManagerServer chatManager)
+        {
+            _chatManager = chatManager;
+        }
+
+        public async Task ConnectAsnc()
         {
             Log.Info("connecting...");
             IsReady = false;
@@ -111,6 +118,22 @@ namespace TorchAlert.Discord
             Log.Info($"input: \"{content}\" by user: {user.Username} in channel: {channel.Name}");
 
             var msg = content.ToLower();
+            if (msg.Contains("check"))
+            {
+                if (_identityLinker.TryGetLinkedSteamUser(user.Id, out var linkedSteamId))
+                {
+                    var linkedPlayerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(linkedSteamId);
+                    await channel.MentionAsync(user.Id, $"Your Discord user is linked to \"{linkedPlayerName}\".");
+                    _chatManager.SendMessage("Alert", linkedSteamId, $"You're linked to \"{user.Username}\".");
+                }
+                else
+                {
+                    await channel.MentionAsync(user.Id, "Your Discord user is not linked to any in-game players. Try `!alert link` in game.");
+                }
+
+                return;
+            }
+
             if (int.TryParse(msg, out var linkId))
             {
                 Log.Info($"link id: {linkId}");
@@ -121,10 +144,12 @@ namespace TorchAlert.Discord
 
                     var linkedPlayerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(linkedSteamId);
                     await channel.MentionAsync(user.Id, $"Alert linked to \"{linkedPlayerName}\". Say \"mute\" and \"unmute\" to turn on/off alerts.");
+                    _chatManager.SendMessage("Alert", linkedSteamId, $"Alert linked to \"{user.Username}\". Type \"!mute\" and \"!unmute\" to turn on/off alerts.");
                     return;
                 }
 
                 await channel.MentionAsync(user.Id, $"Invalid input; not mapped: {linkId}");
+                return;
             }
 
             if (!_identityLinker.TryGetLinkedSteamUser(user.Id, out var steamId))
@@ -203,6 +228,23 @@ namespace TorchAlert.Discord
             }
 
             return alertBuilder.ToString();
+        }
+
+        public async Task<(bool, string)> TryGetDiscordUserName(ulong discordUserId)
+        {
+            var user = await _client.Rest.GetUserAsync(discordUserId);
+            return (user != null, user?.Username);
+        }
+
+        public async Task SendMessageAsync(ulong discordUserId, string message)
+        {
+            var user = await _client.Rest.GetUserAsync(discordUserId);
+            if (user == null)
+            {
+                throw new Exception($"Discord user not found by Discord user ID: {discordUserId}");
+            }
+
+            await user.SendMessageAsync(message);
         }
     }
 }

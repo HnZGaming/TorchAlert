@@ -1,5 +1,6 @@
 ﻿using System;
 using Sandbox.Game.World;
+using Torch;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using Utils.General;
@@ -20,6 +21,26 @@ namespace TorchAlert
             var steamId = GetArgPlayerSteamId();
             var linkId = Plugin.GenerateLinkId(steamId);
             Context.Respond($"Write this code to the Discord bot: {linkId}");
+        });
+
+        [Command("check")]
+        [Permission(MyPromoteLevel.None)]
+        public void CheckLinked() => this.CatchAndReport(async () =>
+        {
+            var steamId = GetArgPlayerSteamId();
+            var playerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(steamId);
+            var (linked, discordName) = await Plugin.TryGetLinkedDiscordUserName(steamId);
+
+            var message = linked
+                ? $"Player \"{playerName}\" is linked to \"{discordName}\""
+                : $"Player \"{playerName}\" is not linked to any Discord user. Try \"!alert link\".";
+
+            Context.Respond(message);
+
+            if (linked)
+            {
+                await Plugin.SendDiscordMessageAsync(steamId, $"You're linked to \"{playerName}\"");
+            }
         });
 
         [Command("mute")]
