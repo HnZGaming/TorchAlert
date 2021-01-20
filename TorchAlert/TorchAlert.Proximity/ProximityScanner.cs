@@ -6,7 +6,7 @@ using Utils.Torch;
 using VRage.Game.Entity;
 using VRageMath;
 
-namespace TorchAlert.Core
+namespace TorchAlert.Proximity
 {
     // must be testable
     public sealed class ProximityScanner
@@ -24,7 +24,7 @@ namespace TorchAlert.Core
             _config = config;
         }
 
-        public IEnumerable<Proximity> ScanProximity(IEnumerable<DefenderGridInfo> defenders)
+        public IEnumerable<ProximityInfo> ScanProximity(IEnumerable<DefenderGridInfo> defenders)
         {
             var tmpNearEntities = new List<MyEntity>();
 
@@ -46,7 +46,7 @@ namespace TorchAlert.Core
                     if (distance > _config.ProximityThreshold) continue;
 
                     var gridInfo = MakeOffenderGridInfo(nearGrid);
-                    var proximity = new Proximity(defender, gridInfo, distance);
+                    var proximity = new ProximityInfo(defender, gridInfo, distance);
 
                     Log.Trace($"proximity: {proximity}");
                     yield return proximity;

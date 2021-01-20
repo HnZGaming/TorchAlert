@@ -5,13 +5,13 @@ using NLog;
 using Sandbox.Game.World;
 using VRage.Game;
 
-namespace TorchAlert.Core
+namespace TorchAlert.Proximity
 {
     public sealed class ProximityAlertCreator
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
-        public IEnumerable<ProximityAlert> CreateAlerts(IEnumerable<Proximity> proximities)
+        public IEnumerable<ProximityAlert> CreateAlerts(IEnumerable<ProximityInfo> proximities)
         {
             // for each steam id, for each grid id, make a report
             var allAlerts = new Dictionary<ulong, Dictionary<long, ProximityAlert>>();
@@ -36,7 +36,7 @@ namespace TorchAlert.Core
             }
         }
 
-        IEnumerable<ProximityAlert> GetProximityAlerts(Proximity proximity)
+        IEnumerable<ProximityAlert> GetProximityAlerts(ProximityInfo proximity)
         {
             var (defender, offender, distance) = proximity;
 

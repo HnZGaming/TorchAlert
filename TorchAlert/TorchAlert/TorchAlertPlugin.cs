@@ -4,19 +4,21 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using Discord.Torch;
 using NLog;
+using Sandbox.Game.World;
 using Torch;
 using Torch.API;
 using Torch.API.Managers;
 using Torch.API.Plugins;
 using TorchAlert.Core;
-using TorchAlert.Discord;
+using TorchAlert.Proximity;
 using Utils.General;
 using Utils.Torch;
 
 namespace TorchAlert
 {
-    public sealed class TorchAlertPlugin : TorchPluginBase, IWpfPlugin
+    public sealed class TorchAlertPlugin : TorchPluginBase, IWpfPlugin, ITorchDiscordMessageListener
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
@@ -24,20 +26,18 @@ namespace TorchAlert
         UserControl _userControl;
         FileLoggingConfigurator _fileLoggingConfigurator;
         CancellationTokenSource _cancellationTokenSource;
+        AlertableSteamIdExtractor _steamIdExtractor;
         GridInfoCollector _defenderGridCollector;
         ProximityScanner _proximityScanner;
         ProximityAlertCreator _alertCreator;
         ProximityAlertBuffer _alertBuffer;
-        DiscordAlertClient _discordClient;
+        TorchDiscordClient _torchDiscordClient;
+        AlertDiscordClient _alertDiscordClient;
         DiscordIdentityLinker _identityLinker;
         DiscordIdentityLinkDb _linkDb;
 
         public TorchAlertConfig Config => _config.Data;
-
-        public UserControl GetControl()
-        {
-            return _config.GetOrCreateUserControl(ref _userControl);
-        }
+        public UserControl GetControl() => _config.GetOrCreateUserControl(ref _userControl);
 
         public override void Init(ITorchBase torch)
         {
@@ -57,14 +57,14 @@ namespace TorchAlert
 
             var linkDbPath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.csv");
             _linkDb = new DiscordIdentityLinkDb(linkDbPath);
-
-            _defenderGridCollector = new GridInfoCollector(Config, _linkDb);
+            _steamIdExtractor = new AlertableSteamIdExtractor(Config, _linkDb);
+            _defenderGridCollector = new GridInfoCollector(_steamIdExtractor);
             _proximityScanner = new ProximityScanner(Config);
             _alertCreator = new ProximityAlertCreator();
             _alertBuffer = new ProximityAlertBuffer(Config);
             _identityLinker = new DiscordIdentityLinker(_linkDb);
-
-            _discordClient = new DiscordAlertClient(Config, _identityLinker);
+            _torchDiscordClient = new TorchDiscordClient(Config, _identityLinker);
+            _alertDiscordClient = new AlertDiscordClient(Config, _torchDiscordClient);
 
             Log.Info("initialized");
         }
@@ -97,9 +97,11 @@ namespace TorchAlert
         void OnGameLoaded()
         {
             var chatManager = Torch.CurrentSession.Managers.GetManager<IChatManagerServer>();
-            _discordClient.Initialize(chatManager);
+            _torchDiscordClient.Initialize(chatManager);
+            _torchDiscordClient.AddMessageListener(this);
 
-            _linkDb.Initialize();
+            _linkDb.Read();
+
             TaskUtils.RunUntilCancelledAsync(MainLoop, _cancellationTokenSource.Token).Forget(Log);
         }
 
@@ -114,7 +116,7 @@ namespace TorchAlert
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (!Config.Enable || !_discordClient.IsReady)
+                if (!Config.Enable || !_torchDiscordClient.IsReady)
                 {
                     await Task.Delay(10.Seconds(), cancellationToken);
                     continue;
@@ -134,11 +136,7 @@ namespace TorchAlert
                         Log.Trace($"alert: {alert}");
                     }
 
-                    await _discordClient.SendAlertAsync(alerts);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
+                    await _alertDiscordClient.SendProximityAlertAsync(alerts);
                 }
                 catch (Exception e)
                 {
@@ -154,7 +152,7 @@ namespace TorchAlert
         {
             try
             {
-                await _discordClient.ConnectAsnc();
+                await _torchDiscordClient.ConnectAsync();
                 Log.Info("discord connected");
             }
             catch (Exception e)
@@ -165,7 +163,7 @@ namespace TorchAlert
 
         void OnGameUnloading()
         {
-            _discordClient?.Dispose();
+            _torchDiscordClient?.Dispose();
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
             Config.PropertyChanged -= OnConfigPropertyChanged;
@@ -179,31 +177,44 @@ namespace TorchAlert
 
         public async Task<(bool, string)> TryGetLinkedDiscordUserName(ulong steamId)
         {
-            if (!_identityLinker.TryGetLinkedDiscordId(steamId, out var discordId))
+            if (!_identityLinker.TryGetDiscordId(steamId, out var discordId))
             {
                 return (false, default);
             }
 
-            return await _discordClient.TryGetDiscordUserName(discordId);
+            return await _torchDiscordClient.TryGetDiscordUserName(discordId);
         }
 
-        public async Task SendMockAlert(ulong steamId)
+        public Task SendMockAlert(ulong steamId)
         {
-            await _discordClient.SendAlertAsync(new[]
+            return _alertDiscordClient.SendMockAlertAsync(steamId);
+        }
+
+        bool ITorchDiscordMessageListener.TryRespond(ulong steamId, string message, out string response)
+        {
+            var playerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(steamId);
+
+            if (message.Contains("start") || message.Contains("unmute"))
             {
-                new ProximityAlert(steamId, 0, "My Grid", 1000, new OffenderGridInfo(0, "Enemy Ship", "Enemy", null, "ENM", "Enemy Faction")),
-                new ProximityAlert(steamId, 0, "My Grid", 2000, new OffenderGridInfo(0, "Enemy Drone", "Enemy", null, "ENM", "Enemy Faction")),
-            });
+                Config.Unmute(steamId);
+                response = $"Alerts started by \"{playerName}\"";
+                return true;
+            }
+
+            if (message.Contains("stop") || message.Contains("mute"))
+            {
+                Config.Mute(steamId);
+                response = $"Alerts stopped by \"{playerName}\"";
+                return true;
+            }
+
+            response = null;
+            return false;
         }
 
         public async Task SendDiscordMessageAsync(ulong steamId, string message)
         {
-            if (!_identityLinker.TryGetLinkedDiscordId(steamId, out var discordId))
-            {
-                throw new Exception($"Discord user not linked to {steamId}");
-            }
-
-            await _discordClient.SendMessageAsync(discordId, message);
+            await _torchDiscordClient.SendMessageAsync(steamId, message);
         }
     }
 }

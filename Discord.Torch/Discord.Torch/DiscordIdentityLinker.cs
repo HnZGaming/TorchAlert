@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using NLog;
 using Sandbox.Game.World;
 
-namespace TorchAlert.Discord
+namespace Discord.Torch
 {
     public sealed class DiscordIdentityLinker
     {
@@ -20,30 +20,14 @@ namespace TorchAlert.Discord
             _nextLinkId = new Random().Next(0, short.MaxValue / 2);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetLinkedSteamUser(ulong discordId, out ulong steamId)
+        public bool TryGetSteamId(ulong discordId, out ulong steamId)
         {
-            if (_db.TryGetLinkByDiscordId(discordId, out var link))
-            {
-                steamId = link.SteamId;
-                return true;
-            }
-
-            steamId = 0;
-            return false;
+            return _db.TryGetSteamId(discordId, out steamId);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetLinkedDiscordId(ulong steamId, out ulong discordId)
+        public bool TryGetDiscordId(ulong steamId, out ulong discordId)
         {
-            if (_db.TryGetLinkBySteamId(steamId, out var link))
-            {
-                discordId = link.DiscordId;
-                return true;
-            }
-
-            discordId = 0;
-            return false;
+            return _db.TryGetDiscordId(steamId, out discordId);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -63,7 +47,8 @@ namespace TorchAlert.Discord
         {
             if (_linkIds.TryGetValue(linkId, out steamId))
             {
-                _db.MakeLink(steamId, discordId);
+                _db.Update(steamId, discordId);
+                _db.Write();
                 _linkIds.Remove(linkId);
                 return true;
             }

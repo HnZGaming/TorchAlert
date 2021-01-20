@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using NLog;
 
-namespace TorchAlert.Core
+namespace TorchAlert.Proximity
 {
     public sealed class ProximityAlertBuffer
     {

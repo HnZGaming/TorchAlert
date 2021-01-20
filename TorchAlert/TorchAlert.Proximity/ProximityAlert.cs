@@ -1,4 +1,4 @@
-﻿namespace TorchAlert.Core
+﻿namespace TorchAlert.Proximity
 {
     public sealed class ProximityAlert
     {

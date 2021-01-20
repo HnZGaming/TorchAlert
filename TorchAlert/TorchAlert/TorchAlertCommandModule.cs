@@ -116,7 +116,7 @@ namespace TorchAlert
         [Permission(MyPromoteLevel.Admin)]
         public void SetFormat(string format) => this.CatchAndReport(() =>
         {
-            Plugin.Config.AlertFormat = format;
+            Plugin.Config.ProximityAlertFormat = format;
         });
 
         ulong GetArgPlayerSteamId()

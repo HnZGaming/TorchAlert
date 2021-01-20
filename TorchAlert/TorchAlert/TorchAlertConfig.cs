@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Xml.Serialization;
+using Discord.Torch;
 using NLog;
 using Torch;
 using Torch.Views;
 using TorchAlert.Core;
-using TorchAlert.Discord;
+using TorchAlert.Proximity;
 using Utils.General;
 
 namespace TorchAlert
@@ -12,10 +13,11 @@ namespace TorchAlert
     public sealed class TorchAlertConfig :
         ViewModel,
         ProximityScanner.IConfig,
-        DiscordAlertClient.IConfig,
-        GridInfoCollector.IConfig,
+        AlertDiscordClient.IConfig,
+        AlertableSteamIdExtractor.IConfig,
         FileLoggingConfigurator.IConfig,
-        ProximityAlertBuffer.IConfig
+        ProximityAlertBuffer.IConfig,
+        TorchDiscordClient.IConfig
     {
         const string OpGroupName = "Operation";
         const string LogGroupName = "Logging";
@@ -29,6 +31,7 @@ namespace TorchAlert
         bool _enable = true;
         List<ulong> _mutedSteamIds = new List<ulong>();
         string _alertFormat = "{alert_name}: spotted enemy grid \"{grid_name}\" in {distance} meters, owned by [{faction_tag}] {owner_name}";
+        string _damageAlertFormat = "{alert_name}: attacked by [{faction_tag}] {owner_name}";
         string _logFilePath = "Logs/TorchAlert-${shortdate}.log";
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
@@ -73,12 +76,20 @@ namespace TorchAlert
             set => SetValue(ref _token, value);
         }
 
-        [XmlElement("AlertFormat")]
-        [Display(Name = "Alert format", GroupName = DiscordGroupName)]
-        public string AlertFormat
+        [XmlElement("ProximityAlertFormat")]
+        [Display(Name = "Proximity alert format", GroupName = DiscordGroupName)]
+        public string ProximityAlertFormat
         {
             get => _alertFormat;
             set => SetValue(ref _alertFormat, value);
+        }
+
+        [XmlElement("DamageAlertFormat")]
+        [Display(Name = "Damage alert format", GroupName = DiscordGroupName)]
+        public string DamageAlertFormat
+        {
+            get => _damageAlertFormat;
+            set => _damageAlertFormat = value;
         }
 
         [XmlElement("MutedSteamIds")]

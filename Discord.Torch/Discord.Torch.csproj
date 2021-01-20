@@ -4,15 +4,15 @@
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <ProjectGuid>{E3945BE3-52C6-4EC3-AD63-BFF8671C81D6}</ProjectGuid>
+        <ProjectGuid>{3A252239-3111-457B-8E3F-FCD7487193CF}</ProjectGuid>
         <OutputType>Library</OutputType>
         <AppDesignerFolder>Properties</AppDesignerFolder>
-        <AssemblyName>TorchAlert</AssemblyName>
+        <AssemblyName>Discord.Torch</AssemblyName>
         <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <PlatformTarget>x64</PlatformTarget>
+        <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugSymbols>true</DebugSymbols>
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
@@ -22,7 +22,7 @@
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <PlatformTarget>x64</PlatformTarget>
+        <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugType>pdbonly</DebugType>
         <Optimize>true</Optimize>
         <OutputPath>bin\Release\</OutputPath>
@@ -30,6 +30,9 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
+    <ItemGroup>
+        <None Include="packages.config" />
+    </ItemGroup>
     <ItemGroup>
         <Reference Include="Discord.Net.Commands, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null">
             <HintPath>..\packages\Discord.Net.Commands.2.2.0\lib\net461\Discord.Net.Commands.dll</HintPath>
@@ -71,24 +74,17 @@
             <HintPath>..\packages\System.Linq.Async.4.0.0\lib\net461\System.Linq.Async.dll</HintPath>
             <Private>True</Private>
         </Reference>
-        <Reference Include="System.ServiceModel" />
+        <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+            <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.2\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+            <Private>True</Private>
+        </Reference>
         <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51">
             <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.2\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll</HintPath>
             <Private>True</Private>
         </Reference>
     </ItemGroup>
     <ItemGroup>
-        <Reference Include="WindowsBase" />
-        <Reference Include="PresentationCore" />
-        <Reference Include="PresentationFramework" />
-        <Reference Include="Microsoft.CSharp" />
         <Reference Include="mscorlib" />
-        <Reference Include="System" />
-        <Reference Include="System.Core" />
-        <Reference Include="System.Data" />
-        <Reference Include="System.Xml" />
-    </ItemGroup>
-    <ItemGroup>
         <Reference Include="NLog">
             <HintPath>$(SolutionDir)\TorchBinaries\NLog.dll</HintPath>
         </Reference>
@@ -190,19 +186,23 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="TorchAlert.Core\AlertableSteamIdExtractor.cs" />
-        <Compile Include="TorchAlert.Core\AlertDiscordClient.cs" />
-        <Compile Include="TorchAlert.Proximity\DefenderGridInfo.cs" />
-        <Compile Include="TorchAlert.Proximity\GridInfoCollector.cs" />
-        <Compile Include="TorchAlert.Proximity\OffenderGridInfo.cs" />
-        <Compile Include="TorchAlert.Proximity\ProximityAlert.cs" />
-        <Compile Include="TorchAlert.Proximity\ProximityAlertBuffer.cs" />
-        <Compile Include="TorchAlert.Proximity\ProximityAlertCreator.cs" />
-        <Compile Include="TorchAlert.Proximity\ProximityInfo.cs" />
-        <Compile Include="TorchAlert.Proximity\ProximityScanner.cs" />
-        <Compile Include="TorchAlert\TorchAlertCommandModule.cs" />
-        <Compile Include="TorchAlert\TorchAlertConfig.cs" />
-        <Compile Include="TorchAlert\TorchAlertPlugin.cs" />
+        <Reference Include="WindowsBase" />
+        <Reference Include="PresentationCore" />
+        <Reference Include="PresentationFramework" />
+        <Reference Include="Microsoft.CSharp" />
+        <Reference Include="mscorlib" />
+        <Reference Include="System" />
+        <Reference Include="System.Core" />
+        <Reference Include="System.Data" />
+        <Reference Include="System.Xml" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Discord.Torch\DiscordIdentityLinkDb.cs" />
+        <Compile Include="Discord.Torch\ITorchDiscordMessageListener.cs" />
+        <Compile Include="Discord.Torch\TorchDiscordClient.cs" />
+        <Compile Include="Discord.Torch\DiscordIdentityLink.cs" />
+        <Compile Include="Discord.Torch\DiscordIdentityLinker.cs" />
+        <Compile Include="Discord.Torch\DiscordUtils.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Utils.General\AbsJsonConverter.cs" />
         <Compile Include="Utils.General\ActionDisposable.cs" />
@@ -233,31 +233,13 @@
         <Compile Include="Utils.Torch\VRageUtils.cs" />
         <Compile Include="Utils.Torch\XmlUtils.cs" />
     </ItemGroup>
-    <ItemGroup>
-        <Content Include="manifest.xml" />
-        <Content Include="postbuild.bat" />
-        <Content Include="symutil.bat" />
-    </ItemGroup>
-    <ItemGroup>
-        <None Include="packages.config" />
-    </ItemGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\Discord.Torch\Discord.Torch.csproj">
-        <Project>{3a252239-3111-457b-8e3f-fcd7487193cf}</Project>
-        <Name>Discord.Torch</Name>
-      </ProjectReference>
-    </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-    <PropertyGroup>
-        <PostBuildEvent>
-            [ -z "$NoDeploy" ] || $(ProjectDir)postbuild.bat $(ProjectName) $(SolutionDir)
-        </PostBuildEvent>
-    </PropertyGroup>
-    <Import Project="..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" />
-    <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-        <PropertyGroup>
-            <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
-        </PropertyGroup>
-        <Error Condition="!Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets'))" />
+    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+         Other similar extension points exist, see Microsoft.Common.targets.
+    <Target Name="BeforeBuild">
     </Target>
+    <Target Name="AfterBuild">
+    </Target>
+    -->
+
 </Project>
