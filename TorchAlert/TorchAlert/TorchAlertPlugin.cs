@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
@@ -12,6 +13,7 @@ using Torch.API;
 using Torch.API.Managers;
 using Torch.API.Plugins;
 using TorchAlert.Core;
+using TorchAlert.Damage;
 using TorchAlert.Proximity;
 using Utils.General;
 using Utils.Torch;
@@ -35,6 +37,7 @@ namespace TorchAlert
         AlertDiscordClient _alertDiscordClient;
         DiscordIdentityLinker _identityLinker;
         DiscordIdentityLinkDb _linkDb;
+        DamageInfoQueue _damageInfoQueue;
 
         public TorchAlertConfig Config => _config.Data;
         public UserControl GetControl() => _config.GetOrCreateUserControl(ref _userControl);
@@ -65,6 +68,7 @@ namespace TorchAlert
             _identityLinker = new DiscordIdentityLinker(_linkDb);
             _torchDiscordClient = new TorchDiscordClient(Config, _identityLinker);
             _alertDiscordClient = new AlertDiscordClient(Config, _torchDiscordClient);
+            _damageInfoQueue = new DamageInfoQueue();
 
             Log.Info("initialized");
         }
@@ -101,6 +105,7 @@ namespace TorchAlert
             _torchDiscordClient.AddMessageListener(this);
 
             _linkDb.Read();
+            _damageInfoQueue.Initialize();
 
             TaskUtils.RunUntilCancelledAsync(MainLoop, _cancellationTokenSource.Token).Forget(Log);
         }
@@ -114,11 +119,14 @@ namespace TorchAlert
                 await InitializeDiscordAsync();
             }
 
+            _damageInfoQueue.Clear();
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (!Config.Enable || !_torchDiscordClient.IsReady)
                 {
                     await Task.Delay(10.Seconds(), cancellationToken);
+                    _damageInfoQueue.Clear();
                     continue;
                 }
 
@@ -141,6 +149,30 @@ namespace TorchAlert
                 catch (Exception e)
                 {
                     Log.Error(e);
+                }
+
+                using (_damageInfoQueue.DequeueDamageInfos(out var damageInfos))
+                {
+                    var alerts = new Dictionary<ulong, List<DamageAlert>>();
+                    foreach (var damageInfo in damageInfos)
+                    {
+                        var steamIds = _steamIdExtractor.GetAlertableSteamIds(damageInfo.DefenderId);
+                        foreach (var steamId in steamIds)
+                        {
+                            var gridName = damageInfo.DefenderGridName;
+                            var isPlayer = MySession.Static.Players.TryGetPlayerById(damageInfo.OffenderId, out var offender);
+                            var offenderName = isPlayer ? offender.DisplayName : null;
+                            var hasFaction = MySession.Static.Factions.TryGetPlayerFaction(damageInfo.OffenderId, out var faction);
+                            var factionName = hasFaction ? faction.Name : null;
+                            var factionTag = hasFaction ? faction.Tag : null;
+                            var alert = new DamageAlert(steamId, gridName, offenderName, factionName, factionTag);
+
+                            alerts.Add(steamId, alert);
+                        }
+                    }
+
+                    var a = alerts.Values.SelectMany(v => v);
+                    await _alertDiscordClient.SendDamageAlertAsync(a);
                 }
 
                 Log.Debug("finished main loop interval");

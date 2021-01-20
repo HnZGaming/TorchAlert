@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord.Torch;
 using NLog;
+using TorchAlert.Damage;
 using TorchAlert.Proximity;
 using Utils.General;
 
@@ -15,6 +16,7 @@ namespace TorchAlert.Core
         public interface IConfig
         {
             string ProximityAlertFormat { get; }
+            string DamageAlertFormat { get; }
         }
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
@@ -52,6 +54,31 @@ namespace TorchAlert.Core
             }
         }
 
+        public async Task SendDamageAlertAsync(IEnumerable<DamageAlert> allAlerts)
+        {
+            if (!allAlerts.Any()) return;
+
+            // key: steam id; value: list of reports to that player
+            var linkedAlerts = new Dictionary<ulong, List<DamageAlert>>();
+            foreach (var alert in allAlerts)
+            {
+                linkedAlerts.Add(alert.SteamId, alert);
+            }
+
+            foreach (var (steamId, alerts) in linkedAlerts)
+            {
+                try
+                {
+                    var message = MakeDamageAlertMessage(alerts);
+                    await _client.SendDirectMessageAsync(steamId, message);
+                }
+                catch (Exception e) // can happen if discord user isn't found etc
+                {
+                    Log.Error(e);
+                }
+            }
+        }
+
         string MakeProximityAlertMessage(IEnumerable<ProximityAlert> alerts)
         {
             var alertBuilder = new StringBuilder();
@@ -78,6 +105,23 @@ namespace TorchAlert.Core
                 new ProximityAlert(steamId, 0, "My Grid", 1000, new OffenderGridInfo(0, "Enemy Ship", "Enemy", null, "ENM", "Enemy Faction")),
                 new ProximityAlert(steamId, 0, "My Grid", 2000, new OffenderGridInfo(0, "Enemy Drone", "Enemy", null, "ENM", "Enemy Faction")),
             });
+        }
+
+        string MakeDamageAlertMessage(IEnumerable<DamageAlert> alerts)
+        {
+            var alertBuilder = new StringBuilder();
+            foreach (var alert in alerts)
+            {
+                var msg = _config.DamageAlertFormat
+                    .Replace("{alert_name}", alert.GridName)
+                    .Replace("{owner_name}", alert.OffenderName ?? "<none>")
+                    .Replace("{faction_name}", alert.OffenderFactionName ?? "<none>")
+                    .Replace("{faction_tag}", alert.OffenderFactionTag ?? "<none>");
+
+                alertBuilder.AppendLine(msg);
+            }
+
+            return alertBuilder.ToString();
         }
     }
 }

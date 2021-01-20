@@ -192,6 +192,9 @@
     <ItemGroup>
         <Compile Include="TorchAlert.Core\AlertableSteamIdExtractor.cs" />
         <Compile Include="TorchAlert.Core\AlertDiscordClient.cs" />
+        <Compile Include="TorchAlert.Damage\DamageAlert.cs" />
+        <Compile Include="TorchAlert.Damage\DamageInfo.cs" />
+        <Compile Include="TorchAlert.Damage\DamageInfoQueue.cs" />
         <Compile Include="TorchAlert.Proximity\DefenderGridInfo.cs" />
         <Compile Include="TorchAlert.Proximity\GridInfoCollector.cs" />
         <Compile Include="TorchAlert.Proximity\OffenderGridInfo.cs" />
