@@ -1,4 +1,4 @@
-﻿namespace TorchAlert.Discord
+﻿namespace Discord.Torch
 {
     public sealed class DiscordIdentityLink
     {
