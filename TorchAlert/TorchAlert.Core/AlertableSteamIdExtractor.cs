@@ -28,12 +28,17 @@ namespace TorchAlert.Core
         public IEnumerable<ulong> GetAlertableSteamIds(long ownerId)
         {
             var steamIds = GetFriendIds(ownerId);
-            Log.Trace($"alert receiver steam IDs: {steamIds.ToStringSeq()}");
+            Log.Trace($"friend IDs: {ownerId} -> {steamIds.ToStringSeq()}");
 
             foreach (var steamId in steamIds)
             {
+                Log.Trace($"checking mute: {steamId}");
                 if (_config.IsMuted(steamId)) continue;
+
+                Log.Trace($"checking discord link: {steamId}");
                 if (!_links.HasDiscordLink(steamId)) continue;
+
+                Log.Trace($"alertable steam ID: {steamId}");
                 yield return steamId;
             }
         }

@@ -12,7 +12,7 @@ namespace TorchAlert
 {
     public sealed class TorchAlertConfig :
         ViewModel,
-        ProximityScanner.IConfig,
+        OffenderProximityScanner.IConfig,
         AlertDiscordClient.IConfig,
         AlertableSteamIdExtractor.IConfig,
         FileLoggingConfigurator.IConfig,
@@ -26,18 +26,18 @@ namespace TorchAlert
 
         int _scanInterval = 20;
         int _proximityThreshold = 10000;
-        int _bufferCount = 3;
         string _token = "empty";
         bool _enable = true;
         List<ulong> _mutedSteamIds = new List<ulong>();
-        string _alertFormat = "{alert_name}: spotted enemy grid \"{grid_name}\" in {distance} meters, owned by [{faction_tag}] {owner_name}";
-        string _damageAlertFormat = "{alert_name}: attacked by [{faction_tag}] {owner_name}";
+        string _alertFormat = "${alert_name}: spotted enemy grid \"${grid_name}\" in ${distance} meters, owned by [${faction_tag}] ${owner_name}";
+        string _damageAlertFormat = "${alert_name}: attacked by [${faction_tag}] ${owner_name}";
         string _logFilePath = "Logs/TorchAlert-${shortdate}.log";
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
+        bool _enableLoggingDebug;
 
         [XmlElement("Enable")]
-        [Display(Name = "Enable", GroupName = OpGroupName)]
+        [Display(Name = "Enable", GroupName = OpGroupName, Order = 0)]
         public bool Enable
         {
             get => _enable;
@@ -45,7 +45,7 @@ namespace TorchAlert
         }
 
         [XmlElement("ScanInterval")]
-        [Display(Name = "Scan interval", GroupName = OpGroupName)]
+        [Display(Name = "Scan interval", GroupName = OpGroupName, Order = 1)]
         public int ScanInterval
         {
             get => _scanInterval;
@@ -53,23 +53,23 @@ namespace TorchAlert
         }
 
         [XmlElement("ProximityThreshold")]
-        [Display(Name = "Proximity threshold (meters)", GroupName = OpGroupName)]
+        [Display(Name = "Proximity threshold (meters)", GroupName = OpGroupName, Order = 2)]
         public int ProximityThreshold
         {
             get => _proximityThreshold;
             set => SetValue(ref _proximityThreshold, value);
         }
 
-        [XmlElement("BufferCount")]
-        [Display(Name = "Buffer count", GroupName = OpGroupName)]
-        public int BufferCount
+        [XmlElement("MutedSteamIds")]
+        [Display(Name = "Muted Steam IDs", GroupName = OpGroupName, Order = 3)]
+        public List<ulong> MutedSteamIds
         {
-            get => _bufferCount;
-            set => SetValue(ref _bufferCount, value);
+            get => _mutedSteamIds;
+            set => SetValue(ref _mutedSteamIds, value);
         }
 
         [XmlElement("Token")]
-        [Display(Name = "Discord bot token", GroupName = DiscordGroupName)]
+        [Display(Name = "Discord bot token", GroupName = DiscordGroupName, Order = 1)]
         public string Token
         {
             get => _token;
@@ -77,7 +77,7 @@ namespace TorchAlert
         }
 
         [XmlElement("ProximityAlertFormat")]
-        [Display(Name = "Proximity alert format", GroupName = DiscordGroupName)]
+        [Display(Name = "Proximity alert format", GroupName = DiscordGroupName, Order = 2)]
         public string ProximityAlertFormat
         {
             get => _alertFormat;
@@ -85,23 +85,15 @@ namespace TorchAlert
         }
 
         [XmlElement("DamageAlertFormat")]
-        [Display(Name = "Damage alert format", GroupName = DiscordGroupName)]
+        [Display(Name = "Damage alert format", GroupName = DiscordGroupName, Order = 3)]
         public string DamageAlertFormat
         {
             get => _damageAlertFormat;
-            set => _damageAlertFormat = value;
-        }
-
-        [XmlElement("MutedSteamIds")]
-        [Display(Name = "Muted Steam IDs", GroupName = OpGroupName)]
-        public List<ulong> MutedSteamIds
-        {
-            get => _mutedSteamIds;
-            set => SetValue(ref _mutedSteamIds, value);
+            set => SetValue(ref _damageAlertFormat, value);
         }
 
         [XmlElement("LogFilePath")]
-        [Display(Name = "Log file path", GroupName = LogGroupName)]
+        [Display(Name = "Log file path", GroupName = LogGroupName, Order = 0)]
         public string LogFilePath
         {
             get => _logFilePath;
@@ -109,7 +101,7 @@ namespace TorchAlert
         }
 
         [XmlElement("SuppressWpfOutput")]
-        [Display(Name = "Suppress console output", GroupName = LogGroupName)]
+        [Display(Name = "Suppress console output", GroupName = LogGroupName, Order = 1)]
         public bool SuppressWpfOutput
         {
             get => _suppressWpfOutput;
@@ -117,11 +109,19 @@ namespace TorchAlert
         }
 
         [XmlElement("EnableLoggingTrace")]
-        [Display(Name = "Output trace logs", GroupName = LogGroupName)]
+        [Display(Name = "Output trace logs", GroupName = LogGroupName, Order = 2)]
         public bool EnableLoggingTrace
         {
             get => _enableLoggingTrace;
             set => SetValue(ref _enableLoggingTrace, value);
+        }
+
+        [XmlElement("EnableLoggingDebug")]
+        [Display(Name = "Output debug logs", GroupName = LogGroupName, Order = 3)]
+        public bool EnableLoggingDebug
+        {
+            get => _enableLoggingDebug;
+            set => SetValue(ref _enableLoggingDebug, value);
         }
 
         public bool IsMuted(ulong steamId)
@@ -147,7 +147,5 @@ namespace TorchAlert
                 OnPropertyChanged(nameof(MutedSteamIds));
             }
         }
-
-        double ProximityAlertBuffer.IConfig.BufferDistance => (double) _proximityThreshold / _bufferCount;
     }
 }

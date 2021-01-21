@@ -1,12 +1,12 @@
 ﻿namespace TorchAlert.Proximity
 {
-    public readonly struct ProximityInfo
+    public readonly struct OffenderProximityInfo
     {
         public readonly DefenderGridInfo Defender;
         public readonly OffenderGridInfo Offender;
         public readonly double Distance;
 
-        public ProximityInfo(DefenderGridInfo defender, OffenderGridInfo offender, double distance)
+        public OffenderProximityInfo(DefenderGridInfo defender, OffenderGridInfo offender, double distance)
         {
             Defender = defender;
             Offender = offender;

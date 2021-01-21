@@ -81,47 +81,57 @@ namespace TorchAlert.Core
 
         string MakeProximityAlertMessage(IEnumerable<ProximityAlert> alerts)
         {
-            var alertBuilder = new StringBuilder();
+            var messages = new HashSet<string>();
             foreach (var alert in alerts)
             {
-                var msg = _config.ProximityAlertFormat
-                    .Replace("{alert_name}", alert.GridName)
-                    .Replace("{distance}", $"{alert.Distance:0}")
-                    .Replace("{grid_name}", alert.Offender.GridName)
-                    .Replace("{owner_name}", alert.Offender.OwnerName ?? "<none>")
-                    .Replace("{faction_name}", alert.Offender.FactionName ?? "<none>")
-                    .Replace("{faction_tag}", alert.Offender.FactionTag ?? "<none>");
+                var message = _config.ProximityAlertFormat
+                    .Replace("${alert_name}", alert.GridName)
+                    .Replace("${distance}", $"{alert.Distance:0}")
+                    .Replace("${grid_name}", alert.Offender.GridName)
+                    .Replace("${owner_name}", alert.Offender.OwnerName ?? "<none>")
+                    .Replace("${faction_tag}", alert.Offender.FactionTag ?? "<none>");
 
-                alertBuilder.AppendLine(msg);
+                messages.Add(message);
             }
 
-            return alertBuilder.ToString();
+            var sb = new StringBuilder();
+            foreach (var message in messages)
+            {
+                sb.AppendLine(message);
+            }
+
+            return sb.ToString();
         }
 
         public async Task SendMockAlertAsync(ulong steamId)
         {
             await SendProximityAlertAsync(new[]
             {
-                new ProximityAlert(steamId, 0, "My Grid", 1000, new OffenderGridInfo(0, "Enemy Ship", "Enemy", null, "ENM", "Enemy Faction")),
-                new ProximityAlert(steamId, 0, "My Grid", 2000, new OffenderGridInfo(0, "Enemy Drone", "Enemy", null, "ENM", "Enemy Faction")),
+                new ProximityAlert(steamId, 0, "My Grid", new OffenderGridInfo(0, "Enemy Ship", "Enemy", null, "ENM"), 2000),
+                new ProximityAlert(steamId, 0, "My Grid", new OffenderGridInfo(0, "Enemy Drone", "Enemy", null, "ENM"), 2000),
             });
         }
 
         string MakeDamageAlertMessage(IEnumerable<DamageAlert> alerts)
         {
-            var alertBuilder = new StringBuilder();
+            var messages = new HashSet<string>();
             foreach (var alert in alerts)
             {
-                var msg = _config.DamageAlertFormat
-                    .Replace("{alert_name}", alert.GridName)
-                    .Replace("{owner_name}", alert.OffenderName ?? "<none>")
-                    .Replace("{faction_name}", alert.OffenderFactionName ?? "<none>")
-                    .Replace("{faction_tag}", alert.OffenderFactionTag ?? "<none>");
+                var message = _config.DamageAlertFormat
+                    .Replace("${alert_name}", alert.GridName)
+                    .Replace("${owner_name}", alert.OffenderName ?? "<none>")
+                    .Replace("${faction_tag}", alert.OffenderFactionTag ?? "<none>");
 
-                alertBuilder.AppendLine(msg);
+                messages.Add(message);
             }
 
-            return alertBuilder.ToString();
+            var sb = new StringBuilder();
+            foreach (var message in messages)
+            {
+                sb.AppendLine(message);
+            }
+
+            return sb.ToString();
         }
     }
 }

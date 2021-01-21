@@ -27,22 +27,21 @@ namespace TorchAlert.Damage
             if (o is IMySlimBlock block)
             {
                 var grid = block.CubeGrid;
-                if (grid.BigOwners.Count == 0) return; // exceptional filter
-
+                var gridOwnerId = grid.BigOwners.TryGetFirst(out var n) ? n : 0;
                 var info = DamageInfo.Pool.Instance.UnpoolOrCreate();
-                info.Initialize(grid.BigOwners[0], grid.EntityId, grid.DisplayName, i.AttackerId);
+                info.Initialize(gridOwnerId, grid.EntityId, grid.DisplayName, i.AttackerId);
                 _damageInfoQueue.Enqueue(info);
             }
         }
 
-        public IDisposable DequeueDamageInfos(out IEnumerable<DamageInfo> damageInfos)
+        public IDisposable DequeueDamageInfos(out IList<DamageInfo> damageInfos)
         {
             var disposable = new DisposableCollection();
             damageInfos = new List<DamageInfo>();
             while (_damageInfoQueue.TryDequeue(out var damageInfo))
             {
                 damageInfo.AddedTo(disposable);
-                ((List<DamageInfo>) damageInfos).Add(damageInfo);
+                damageInfos.Add(damageInfo);
             }
 
             return disposable;

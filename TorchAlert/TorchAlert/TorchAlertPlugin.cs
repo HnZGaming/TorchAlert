@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
@@ -29,8 +28,8 @@ namespace TorchAlert
         FileLoggingConfigurator _fileLoggingConfigurator;
         CancellationTokenSource _cancellationTokenSource;
         AlertableSteamIdExtractor _steamIdExtractor;
-        GridInfoCollector _defenderGridCollector;
-        ProximityScanner _proximityScanner;
+        DefenderGridCollector _defenderGridCollector;
+        OffenderProximityScanner _offenderProximityScanner;
         ProximityAlertCreator _alertCreator;
         ProximityAlertBuffer _alertBuffer;
         TorchDiscordClient _torchDiscordClient;
@@ -38,6 +37,7 @@ namespace TorchAlert
         DiscordIdentityLinker _identityLinker;
         DiscordIdentityLinkDb _linkDb;
         DamageInfoQueue _damageInfoQueue;
+        DamageAlertCreator _damageAlertCreator;
 
         public TorchAlertConfig Config => _config.Data;
         public UserControl GetControl() => _config.GetOrCreateUserControl(ref _userControl);
@@ -61,14 +61,15 @@ namespace TorchAlert
             var linkDbPath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.csv");
             _linkDb = new DiscordIdentityLinkDb(linkDbPath);
             _steamIdExtractor = new AlertableSteamIdExtractor(Config, _linkDb);
-            _defenderGridCollector = new GridInfoCollector(_steamIdExtractor);
-            _proximityScanner = new ProximityScanner(Config);
+            _defenderGridCollector = new DefenderGridCollector(_steamIdExtractor);
+            _offenderProximityScanner = new OffenderProximityScanner(Config);
             _alertCreator = new ProximityAlertCreator();
             _alertBuffer = new ProximityAlertBuffer(Config);
             _identityLinker = new DiscordIdentityLinker(_linkDb);
             _torchDiscordClient = new TorchDiscordClient(Config, _identityLinker);
             _alertDiscordClient = new AlertDiscordClient(Config, _torchDiscordClient);
             _damageInfoQueue = new DamageInfoQueue();
+            _damageAlertCreator = new DamageAlertCreator(_steamIdExtractor);
 
             Log.Info("initialized");
         }
@@ -87,7 +88,9 @@ namespace TorchAlert
                 }
 
                 if (args.PropertyName == nameof(Config.LogFilePath) ||
-                    args.PropertyName == nameof(Config.EnableLoggingTrace))
+                    args.PropertyName == nameof(Config.SuppressWpfOutput) ||
+                    args.PropertyName == nameof(Config.EnableLoggingTrace) ||
+                    args.PropertyName == nameof(Config.EnableLoggingDebug))
                 {
                     _fileLoggingConfigurator.Configure(Config);
                 }
@@ -135,14 +138,14 @@ namespace TorchAlert
                 try
                 {
                     var grids = _defenderGridCollector.CollectDefenderGrids().ToArray();
-                    var scan = _proximityScanner.ScanProximity(grids).ToArray();
+                    Log.Debug($"defenders: {grids.ToStringSeq()}");
+
+                    var scan = _offenderProximityScanner.ScanProximity(grids).ToArray();
+                    Log.Debug($"proximities: {scan.ToStringSeq()}");
+
                     var alerts = _alertCreator.CreateAlerts(scan).ToArray();
                     alerts = _alertBuffer.Buffer(alerts).ToArray();
-
-                    foreach (var alert in alerts)
-                    {
-                        Log.Trace($"alert: {alert}");
-                    }
+                    Log.Debug($"alerts: {alerts.ToStringSeq()}");
 
                     await _alertDiscordClient.SendProximityAlertAsync(alerts);
                 }
@@ -153,26 +156,10 @@ namespace TorchAlert
 
                 using (_damageInfoQueue.DequeueDamageInfos(out var damageInfos))
                 {
-                    var alerts = new Dictionary<ulong, List<DamageAlert>>();
-                    foreach (var damageInfo in damageInfos)
-                    {
-                        var steamIds = _steamIdExtractor.GetAlertableSteamIds(damageInfo.DefenderId);
-                        foreach (var steamId in steamIds)
-                        {
-                            var gridName = damageInfo.DefenderGridName;
-                            var isPlayer = MySession.Static.Players.TryGetPlayerById(damageInfo.OffenderId, out var offender);
-                            var offenderName = isPlayer ? offender.DisplayName : null;
-                            var hasFaction = MySession.Static.Factions.TryGetPlayerFaction(damageInfo.OffenderId, out var faction);
-                            var factionName = hasFaction ? faction.Name : null;
-                            var factionTag = hasFaction ? faction.Tag : null;
-                            var alert = new DamageAlert(steamId, gridName, offenderName, factionName, factionTag);
-
-                            alerts.Add(steamId, alert);
-                        }
-                    }
-
-                    var a = alerts.Values.SelectMany(v => v);
-                    await _alertDiscordClient.SendDamageAlertAsync(a);
+                    Log.Debug($"damaged grids: {damageInfos.ToStringSeq()}");
+                    var damageAlerts = _damageAlertCreator.CreateDamageAlerts(damageInfos);
+                    Log.Debug($"damage alerts: {damageAlerts.ToStringSeq()}");
+                    await _alertDiscordClient.SendDamageAlertAsync(damageAlerts);
                 }
 
                 Log.Debug("finished main loop interval");

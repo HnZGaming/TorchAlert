@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using NLog;
+using Utils.General;
 
 namespace TorchAlert.Proximity
 {
@@ -7,7 +10,6 @@ namespace TorchAlert.Proximity
     {
         public interface IConfig
         {
-            double BufferDistance { get; }
         }
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
@@ -24,29 +26,20 @@ namespace TorchAlert.Proximity
         {
             foreach (var alert in alerts)
             {
-                var key = (alert.GridId, alert.Offender.GridId);
-                if (!_buffer.TryGetValue(key, out var lastAlert))
+                var pair = (alert.GridId, alert.Offender.GridId);
+                if (_buffer.ContainsKey(pair))
                 {
-                    Log.Trace($"first time alert: {alert}");
-                    _buffer[key] = alert;
-                    yield return alert;
+                    Log.Trace($"skipped alert: {alert}");
                     continue;
                 }
 
-                if (GetBufferScope(alert) != GetBufferScope(lastAlert))
-                {
-                    Log.Trace($"updated alert: {alert}");
-                    _buffer[key] = alert;
-                    yield return alert;
-                }
-
-                Log.Trace($"skipped alert: {alert}");
+                Log.Trace($"first time alert: {alert}");
+                _buffer[pair] = alert;
+                yield return alert;
             }
-        }
 
-        int GetBufferScope(ProximityAlert alert)
-        {
-            return (int) (alert.Distance / _config.BufferDistance);
+            var newAlerts = alerts.Select(a => (a.GridId, a.Offender.GridId));
+            _buffer.IntersectWith(newAlerts);
         }
     }
 }

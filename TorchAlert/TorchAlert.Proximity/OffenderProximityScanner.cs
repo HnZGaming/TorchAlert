@@ -2,6 +2,7 @@
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
+using Utils.General;
 using Utils.Torch;
 using VRage.Game.Entity;
 using VRageMath;
@@ -9,7 +10,7 @@ using VRageMath;
 namespace TorchAlert.Proximity
 {
     // must be testable
-    public sealed class ProximityScanner
+    public sealed class OffenderProximityScanner
     {
         public interface IConfig
         {
@@ -19,12 +20,12 @@ namespace TorchAlert.Proximity
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
 
-        public ProximityScanner(IConfig config)
+        public OffenderProximityScanner(IConfig config)
         {
             _config = config;
         }
 
-        public IEnumerable<ProximityInfo> ScanProximity(IEnumerable<DefenderGridInfo> defenders)
+        public IEnumerable<OffenderProximityInfo> ScanProximity(IEnumerable<DefenderGridInfo> defenders)
         {
             var tmpNearEntities = new List<MyEntity>();
 
@@ -38,15 +39,16 @@ namespace TorchAlert.Proximity
 
                 foreach (var entity in tmpNearEntities)
                 {
-                    if (!(entity is MyCubeGrid nearGrid)) continue;
-                    if (nearGrid.EntityId == defender.GridId) continue;
+                    if (!(entity is MyCubeGrid grid)) continue;
+                    if (grid.EntityId == defender.GridId) continue;
+                    if (!grid.IsTopMostParent<MyCubeGrid>()) continue;
 
-                    var position = nearGrid.PositionComp.GetPosition();
+                    var position = grid.PositionComp.GetPosition();
                     var distance = Vector3D.Distance(defender.Position, position);
                     if (distance > _config.ProximityThreshold) continue;
 
-                    var gridInfo = MakeOffenderGridInfo(nearGrid);
-                    var proximity = new ProximityInfo(defender, gridInfo, distance);
+                    var offenderInfo = MakeOffenderGridInfo(grid);
+                    var proximity = new OffenderProximityInfo(defender, offenderInfo, distance);
 
                     Log.Trace($"proximity: {proximity}");
                     yield return proximity;
@@ -58,17 +60,21 @@ namespace TorchAlert.Proximity
 
         static OffenderGridInfo MakeOffenderGridInfo(MyCubeGrid grid)
         {
-            if (!MySession.Static.Players.TryGetPlayerByGrid(grid, out var player))
+            if (!grid.BigOwners.TryGetFirst(out var playerId))
             {
-                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, null, null, null, null);
+                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, null, null, null);
             }
 
-            if (!MySession.Static.Factions.TryGetFactionByPlayerId(player.PlayerId(), out var faction))
+            var playerName = MySession.Static.Players.TryGetPlayerById(playerId, out var player)
+                ? player.DisplayName
+                : null; // maybe NPC
+
+            if (!MySession.Static.Factions.TryGetPlayerFaction(playerId, out var faction))
             {
-                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, player.DisplayName, null, null, null);
+                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, playerName, null, null);
             }
 
-            return new OffenderGridInfo(grid.EntityId, grid.DisplayName, player.DisplayName, faction.FactionId, faction.Tag, faction.Name);
+            return new OffenderGridInfo(grid.EntityId, grid.DisplayName, playerName, faction.FactionId, faction.Tag);
         }
     }
 }

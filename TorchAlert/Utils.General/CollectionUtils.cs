@@ -170,5 +170,28 @@ namespace Utils.General
 
             elements.Add(element);
         }
+
+        public static void AddOrReplace<K0, K1, V, D>(this IDictionary<K0, D> self, K0 key0, K1 key1, V element) where D : IDictionary<K1, V>, new()
+        {
+            if (!self.TryGetValue(key0, out var elements))
+            {
+                elements = new D();
+                self[key0] = elements;
+            }
+
+            elements[key1] = element;
+        }
+
+        public static void IntersectWith<K, V>(this IDictionary<K, V> self, IEnumerable<K> other)
+        {
+            var otherSet = new HashSet<K>(other);
+            foreach (var k in self.Keys.ToArray())
+            {
+                if (!otherSet.Contains(k))
+                {
+                    self.Remove(k);
+                }
+            }
+        }
     }
 }

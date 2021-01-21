@@ -49,5 +49,10 @@ namespace TorchAlert.Damage
         {
             Pool.Instance.Pool(this);
         }
+
+        public override string ToString()
+        {
+            return $"{nameof(DefenderId)}: {DefenderId}, {nameof(DefenderGridId)}: {DefenderGridId}, {nameof(DefenderGridName)}: {DefenderGridName}, {nameof(OffenderId)}: {OffenderId}";
+        }
     }
 }

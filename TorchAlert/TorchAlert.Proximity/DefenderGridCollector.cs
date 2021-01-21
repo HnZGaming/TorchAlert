@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
@@ -7,12 +8,12 @@ using Utils.General;
 
 namespace TorchAlert.Proximity
 {
-    public sealed class GridInfoCollector
+    public sealed class DefenderGridCollector
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly AlertableSteamIdExtractor _steamIdExtractor;
 
-        public GridInfoCollector(AlertableSteamIdExtractor steamIdExtractor)
+        public DefenderGridCollector(AlertableSteamIdExtractor steamIdExtractor)
         {
             _steamIdExtractor = steamIdExtractor;
         }
@@ -24,11 +25,13 @@ namespace TorchAlert.Proximity
             {
                 var grid = group.GroupData.Root;
                 Log.Trace($"\"{grid.DisplayName}\" static: {grid.IsStatic}");
-                if (!grid.IsStatic) yield break;
+                if (!grid.IsStatic) continue;
 
                 if (grid.BigOwners.TryGetFirst(out var ownerId))
                 {
                     var steamIds = _steamIdExtractor.GetAlertableSteamIds(ownerId);
+                    if (!steamIds.Any()) continue;
+
                     var factionId = MySession.Static.Factions.GetPlayerFaction(ownerId)?.FactionId;
                     var position = grid.PositionComp.GetPosition();
                     var gridInfo = new DefenderGridInfo(grid.EntityId, grid.DisplayName, factionId, position, steamIds);

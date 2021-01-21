@@ -151,12 +151,6 @@ namespace Utils.Torch
             self.SendAddGps(identityId, ref gps, gps.EntityId, playSound);
         }
 
-        public static bool TryGetFactionByPlayerId(this MyFactionCollection self, long playerId, out IMyFaction faction)
-        {
-            faction = self.GetPlayerFaction(playerId);
-            return faction != null;
-        }
-
         public static bool TryGetPlayerByGrid(this MyPlayerCollection self, IMyCubeGrid grid, out MyPlayer player)
         {
             player = null;
@@ -195,6 +189,11 @@ namespace Utils.Torch
         {
             faction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
             return faction != null;
+        }
+
+        public static bool IsTopMostParent<T>(this MyEntity self)
+        {
+            return self.GetTopMostParent(typeof(T)) == self;
         }
     }
 }

@@ -105,13 +105,6 @@ namespace TorchAlert
             Plugin.Config.ProximityThreshold = scanDistance;
         });
 
-        [Command("buffer")]
-        [Permission(MyPromoteLevel.Admin)]
-        public void SetBuffer(int buffer) => this.CatchAndReport(() =>
-        {
-            Plugin.Config.BufferCount = buffer;
-        });
-
         [Command("format")]
         [Permission(MyPromoteLevel.Admin)]
         public void SetFormat(string format) => this.CatchAndReport(() =>
