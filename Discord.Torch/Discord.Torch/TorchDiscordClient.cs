@@ -1,40 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Discord;
 using Discord.WebSocket;
 using NLog;
 using Sandbox.Game.World;
 using Torch.API.Managers;
-using TorchAlert.Core;
 using Utils.General;
 using Utils.Torch;
 
-namespace TorchAlert.Discord
+namespace Discord.Torch
 {
-    public sealed class DiscordAlertClient : IDisposable
+    public sealed class TorchDiscordClient : IDisposable
     {
         public interface IConfig
         {
             string Token { get; }
-            string AlertFormat { get; }
-
-            void Mute(ulong steamId);
-            void Unmute(ulong steamId);
         }
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
         readonly DiscordSocketClient _client;
         readonly DiscordIdentityLinker _identityLinker;
+        readonly List<ITorchDiscordMessageListener> _messageListeners;
         IChatManagerServer _chatManager;
 
-        public DiscordAlertClient(IConfig config, DiscordIdentityLinker identityLinker)
+        public TorchDiscordClient(IConfig config, DiscordIdentityLinker identityLinker)
         {
             _config = config;
             _identityLinker = identityLinker;
+            _messageListeners = new List<ITorchDiscordMessageListener>();
 
             var discordConfig = new DiscordSocketConfig
             {
@@ -54,7 +49,12 @@ namespace TorchAlert.Discord
             _chatManager = chatManager;
         }
 
-        public async Task ConnectAsnc()
+        public void AddMessageListener(ITorchDiscordMessageListener messageListener)
+        {
+            _messageListeners.Add(messageListener);
+        }
+
+        public async Task ConnectAsync()
         {
             Log.Info("connecting...");
             IsReady = false;
@@ -81,6 +81,7 @@ namespace TorchAlert.Discord
         {
             _client.MessageReceived -= OnMessageReceivedAsync;
             _client.Dispose();
+            _messageListeners.Clear();
         }
 
         async Task OnMessageReceivedAsync(SocketMessage er)
@@ -116,11 +117,10 @@ namespace TorchAlert.Discord
         async Task OnMessageReceivedAsync(ISocketMessageChannel channel, SocketUser user, string content)
         {
             Log.Info($"input: \"{content}\" by user: {user.Username} in channel: {channel.Name}");
-
-            var msg = content.ToLower();
-            if (msg.Contains("check"))
+            var receivedMessage = content.ToLower();
+            if (receivedMessage.Contains("check"))
             {
-                if (_identityLinker.TryGetLinkedSteamUser(user.Id, out var linkedSteamId))
+                if (_identityLinker.TryGetSteamId(user.Id, out var linkedSteamId))
                 {
                     var linkedPlayerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(linkedSteamId);
                     await channel.MentionAsync(user.Id, $"Your Discord user is linked to \"{linkedPlayerName}\".");
@@ -134,7 +134,7 @@ namespace TorchAlert.Discord
                 return;
             }
 
-            if (int.TryParse(msg, out var linkId))
+            if (int.TryParse(receivedMessage, out var linkId))
             {
                 Log.Info($"link id: {linkId}");
 
@@ -143,8 +143,8 @@ namespace TorchAlert.Discord
                     Log.Info($"linked steam ID: {linkedSteamId}");
 
                     var linkedPlayerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(linkedSteamId);
-                    await channel.MentionAsync(user.Id, $"Alert linked to \"{linkedPlayerName}\". Say \"mute\" and \"unmute\" to turn on/off alerts.");
-                    _chatManager.SendMessage("Alert", linkedSteamId, $"Alert linked to \"{user.Username}\". Type \"!mute\" and \"!unmute\" to turn on/off alerts.");
+                    await channel.MentionAsync(user.Id, $"Alert linked to \"{linkedPlayerName}\".");
+                    _chatManager.SendMessage("Alert", linkedSteamId, $"Alert linked to \"{user.Username}\".");
                     return;
                 }
 
@@ -152,82 +152,33 @@ namespace TorchAlert.Discord
                 return;
             }
 
-            if (!_identityLinker.TryGetLinkedSteamUser(user.Id, out var steamId))
+            // no linked steam id found
+            if (!_identityLinker.TryGetSteamId(user.Id, out var steamId))
             {
-                await channel.MentionAsync(user.Id, "Alerts not linked to you; type `!alert link` in game to get started");
+                await channel.MentionAsync(user.Id, "Steam ID not linked");
                 return;
             }
 
-            var playerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(steamId);
-
-            if (msg.Contains("start") || msg.Contains("unmute"))
+            // delegate to listeners
+            foreach (var messageListener in _messageListeners)
             {
-                _config.Unmute(steamId);
-                await channel.MentionAsync(user.Id, $"Alerts started by \"{playerName}\"");
-                return;
+                if (messageListener.TryRespond(steamId, receivedMessage, out var response))
+                {
+                    await channel.MentionAsync(user.Id, response);
+                    return;
+                }
             }
 
-            if (msg.Contains("stop") || msg.Contains("mute"))
-            {
-                _config.Mute(steamId);
-                await channel.MentionAsync(user.Id, $"Alerts stopped by \"{playerName}\"");
-                return;
-            }
-
-            await channel.MentionAsync(user.Id, "wot?");
+            await channel.MentionAsync(user.Id, $"Unknown message: \"{receivedMessage}\"");
         }
 
-        public async Task SendAlertAsync(IEnumerable<ProximityAlert> allAlerts)
+        public async Task SendDirectMessageAsync(ulong steamId, string message)
         {
-            if (!allAlerts.Any()) return;
-
-            // key: discord id; value: list of reports to that discord user
-            var linkedAlerts = new Dictionary<ulong, List<ProximityAlert>>();
-            foreach (var alert in allAlerts)
+            if (_identityLinker.TryGetDiscordId(steamId, out var discordId))
             {
-                if (_identityLinker.TryGetLinkedDiscordId(alert.SteamId, out var discordId))
-                {
-                    linkedAlerts.Add(discordId, alert);
-                    Log.Trace($"linked: {alert}");
-                }
-                else
-                {
-                    Log.Trace($"not linked: {alert}");
-                }
+                var discordUser = await _client.Rest.GetUserAsync(discordId);
+                await discordUser.SendMessageAsync(message);
             }
-
-            foreach (var (discordId, alerts) in linkedAlerts)
-            {
-                try
-                {
-                    var discordUser = await _client.Rest.GetUserAsync(discordId);
-                    var message = MakeAlertMessage(alerts);
-                    await discordUser.SendMessageAsync(message);
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e);
-                }
-            }
-        }
-
-        string MakeAlertMessage(IEnumerable<ProximityAlert> alerts)
-        {
-            var alertBuilder = new StringBuilder();
-            foreach (var alert in alerts)
-            {
-                var msg = _config.AlertFormat
-                    .Replace("{alert_name}", alert.GridName)
-                    .Replace("{distance}", $"{alert.Distance:0}")
-                    .Replace("{grid_name}", alert.Offender.GridName)
-                    .Replace("{owner_name}", alert.Offender.OwnerName ?? "<none>")
-                    .Replace("{faction_name}", alert.Offender.FactionName ?? "<none>")
-                    .Replace("{faction_tag}", alert.Offender.FactionTag ?? "<none>");
-
-                alertBuilder.AppendLine(msg);
-            }
-
-            return alertBuilder.ToString();
         }
 
         public async Task<(bool, string)> TryGetDiscordUserName(ulong discordUserId)

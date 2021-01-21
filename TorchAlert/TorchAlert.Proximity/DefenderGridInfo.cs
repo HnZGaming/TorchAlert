@@ -4,7 +4,7 @@ using System.Linq;
 using Utils.General;
 using VRageMath;
 
-namespace TorchAlert.Core
+namespace TorchAlert.Proximity
 {
     public sealed class DefenderGridInfo
     {

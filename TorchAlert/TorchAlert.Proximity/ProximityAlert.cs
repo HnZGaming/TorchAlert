@@ -1,21 +1,21 @@
-﻿namespace TorchAlert.Core
+﻿namespace TorchAlert.Proximity
 {
     public sealed class ProximityAlert
     {
-        public ProximityAlert(ulong steamId, long gridId, string gridName, double distance, OffenderGridInfo offender)
+        public ProximityAlert(ulong steamId, long gridId, string gridName, OffenderGridInfo offender, double distance)
         {
             SteamId = steamId;
             GridId = gridId;
             GridName = gridName;
-            Distance = distance;
             Offender = offender;
+            Distance = distance;
         }
 
         public ulong SteamId { get; }
         public long GridId { get; }
         public string GridName { get; }
-        public double Distance { get; }
         public OffenderGridInfo Offender { get; }
+        public double Distance { get; }
 
         public override string ToString()
         {

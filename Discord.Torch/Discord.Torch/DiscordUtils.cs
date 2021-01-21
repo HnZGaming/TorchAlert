@@ -1,9 +1,8 @@
 ﻿using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Discord;
 using Discord.WebSocket;
 
-namespace TorchAlert.Discord
+namespace Discord.Torch
 {
     public static class DiscordUtils
     {
