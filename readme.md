@@ -1,7 +1,8 @@
 # Torch Alert
 
-Space Engineers + Discord version of Rust Raid Alert. 
-Players will be notified on Discord whenever UFO approaches their base.
+Rust's "Raid Alert" but in Space Engineers (and Discord).
+
+Discord bot will send DM to offline players whenever their grids are in danger. 
 
 ![user alerts](docs/user_alerts.png)
 
@@ -30,32 +31,31 @@ woo woo
 
 ![user setup](docs/user_setup.png)
 
-1. Mention or DM the bot (not required)
-1. In game, type `!alert link`, or in a command line `!alert link <your steam id>`
-1. Note down the link ID that the plugin spits out in response to the command
+1. In game, type `!alert link`, or as an admin `!alert link <your steam id>`
+1. Remember the link ID (1-5 digits number) that the plugin will spit out in response to the command
 1. Mention or DM the bot with the link ID
-1. Get some grids in and and out of the alert zone
 
 ## Troubleshooting (User)
 
 * To validate your Discord/Steam link, type `!alert check` in game or say `check` to the bot on Discord.
 * To link again (for whatever reason) you can simply `!alert link` again.
+* To turn on/off the alert for a player, say "mute" or "unmute" to the bot on Discord, or "!mute" or "!unmute" in game.
 
 ## Config
 
-* Discord bot token
-* Enable/disable the whole process
+* Bot token
+* Enable/disable the whole thing
 * "Scan" interval
 * "Scan" radius
-* Alert message format (Markdown supported I guess)
+* Alert message formats (Markdown supported I guess)
 * Log file path
 * Show/hide console logs
-* Enable/disable trace logs
+* Enable/disable trace/debug logs
 
 Note:
 
 * Most of configs can be set via admin command (see `!longhelp`)
-* You don't need to restart Torch
+* You don't need to restart Torch when you change the configs
 * `!alert mock <steam id>` to debug the alert message format with a mock alert
 
 ## Bug Fix & Feature Requests
