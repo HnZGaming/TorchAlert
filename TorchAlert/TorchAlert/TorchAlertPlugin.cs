@@ -233,7 +233,13 @@ namespace TorchAlert
 
         public async Task SendDiscordMessageAsync(ulong steamId, string message)
         {
-            await _torchDiscordClient.SendMessageAsync(steamId, message);
+            if (!_linkDb.TryGetDiscordId(steamId, out var discordId))
+            {
+                var playerName = MySession.Static.Players.TryGetIdentityNameFromSteamId(steamId);
+                throw new Exception($"Discord not linked to steam user: \"{playerName}\" ({steamId})");
+            }
+
+            await _torchDiscordClient.SendMessageAsync(discordId, message);
         }
     }
 }
