@@ -31,9 +31,9 @@ namespace TorchAlert.Proximity
             }
         }
 
-        IEnumerable<ProximityAlert> GetProximityAlerts(OffenderProximityInfo offenderProximity)
+        static IEnumerable<ProximityAlert> GetProximityAlerts(OffenderProximityInfo proximity)
         {
-            var (defender, offender, distance) = offenderProximity;
+            var (defender, offender, distance) = proximity;
 
             // skip friendly ships
             if (defender.FactionId is long defenderFactionId &&

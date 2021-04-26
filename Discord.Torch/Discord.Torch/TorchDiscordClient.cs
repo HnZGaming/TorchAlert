@@ -11,7 +11,7 @@ using Utils.Torch;
 
 namespace Discord.Torch
 {
-    public sealed class TorchDiscordClient : IDisposable
+    public sealed class TorchDiscordClient
     {
         public interface IConfig
         {
@@ -77,7 +77,7 @@ namespace Discord.Torch
             Log.Info("connected");
         }
 
-        public void Dispose()
+        public void Close()
         {
             _client.MessageReceived -= OnMessageReceivedAsync;
             _client.Dispose();

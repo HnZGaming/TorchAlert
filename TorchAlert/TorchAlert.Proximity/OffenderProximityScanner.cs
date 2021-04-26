@@ -1,10 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
+using Sandbox.ModAPI;
 using Utils.General;
 using Utils.Torch;
 using VRage.Game.Entity;
+using VRage.Game.ModAPI.Ingame;
 using VRageMath;
 
 namespace TorchAlert.Proximity
@@ -14,7 +17,7 @@ namespace TorchAlert.Proximity
     {
         public interface IConfig
         {
-            int ProximityThreshold { get; }
+            int MaxProximity { get; }
         }
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
@@ -31,7 +34,7 @@ namespace TorchAlert.Proximity
 
             foreach (var defender in defenders)
             {
-                var lookout = _config.ProximityThreshold * 10;
+                var lookout = _config.MaxProximity * 10;
                 var sphere = new BoundingSphereD(defender.Position, lookout);
                 var bb = BoundingBoxD.CreateFromSphere(sphere);
                 var obb = MyOrientedBoundingBoxD.CreateFromBoundingBox(bb);
@@ -39,42 +42,62 @@ namespace TorchAlert.Proximity
 
                 foreach (var entity in tmpNearEntities)
                 {
-                    if (!(entity is MyCubeGrid grid)) continue;
-                    if (grid.EntityId == defender.GridId) continue;
-                    if (!grid.IsTopMostParent<MyCubeGrid>()) continue;
+                    Log.Trace($"near entity: \"{entity.DisplayName}\"");
 
-                    var position = grid.PositionComp.GetPosition();
-                    var distance = Vector3D.Distance(defender.Position, position);
-                    if (distance > _config.ProximityThreshold) continue;
-
-                    var offenderInfo = MakeOffenderGridInfo(grid);
-                    var proximity = new OffenderProximityInfo(defender, offenderInfo, distance);
-
-                    Log.Trace($"proximity: {proximity}");
-                    yield return proximity;
+                    if (TryGetOffender(entity, defender, out var offender))
+                    {
+                        yield return offender;
+                    }
                 }
 
                 tmpNearEntities.Clear();
             }
         }
 
+        bool TryGetOffender(IMyEntity entity, DefenderGridInfo defender, out OffenderProximityInfo proximity)
+        {
+            proximity = default;
+
+            if (!(entity is MyCubeGrid offenderGrid)) return false;
+            if (offenderGrid.EntityId == defender.GridId) return false;
+            if (!offenderGrid.IsTopMostParent()) return false;
+
+            var position = offenderGrid.PositionComp.GetPosition();
+            var distance = Vector3D.Distance(defender.Position, position);
+            if (distance > _config.MaxProximity) return false;
+
+            Log.Trace($"offender candidate: \"{offenderGrid.DisplayName}\"");
+
+            if (!HasTerminal(offenderGrid)) return false;
+
+            var offenderInfo = MakeOffenderGridInfo(offenderGrid);
+            proximity = new OffenderProximityInfo(defender, offenderInfo, distance);
+            Log.Trace($"offender: {proximity}");
+
+            return true;
+        }
+
         static OffenderGridInfo MakeOffenderGridInfo(MyCubeGrid grid)
         {
             if (!grid.BigOwners.TryGetFirst(out var playerId))
             {
-                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, null, null, null);
+                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, null, 0, null);
             }
 
-            var playerName = MySession.Static.Players.TryGetPlayerById(playerId, out var player)
-                ? player.DisplayName
-                : null; // maybe NPC
+            MySession.Static.Players.TryGetPlayerById(playerId, out var player);
+            var playerName = player?.DisplayName;
 
-            if (!MySession.Static.Factions.TryGetPlayerFaction(playerId, out var faction))
+            if (!MySession.Static.Factions.TryGetFactionByPlayerId(playerId, out var faction))
             {
-                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, playerName, null, null);
+                return new OffenderGridInfo(grid.EntityId, grid.DisplayName, playerName, 0, null);
             }
 
             return new OffenderGridInfo(grid.EntityId, grid.DisplayName, playerName, faction.FactionId, faction.Tag);
+        }
+
+        static bool HasTerminal(MyCubeGrid grid)
+        {
+            return grid.CubeBlocks.Any(b => b.FatBlock is IMyTerminalBlock);
         }
     }
 }

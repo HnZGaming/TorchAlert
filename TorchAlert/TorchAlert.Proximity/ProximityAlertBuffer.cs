@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using NLog;
 using Utils.General;
@@ -14,31 +13,29 @@ namespace TorchAlert.Proximity
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
-        readonly Dictionary<(long, long), ProximityAlert> _buffer;
+        readonly Dictionary<(ulong, long), ProximityAlert> _buffer; // key is (defender player id, offender grid id)
 
         public ProximityAlertBuffer(IConfig config)
         {
             _config = config;
-            _buffer = new Dictionary<(long, long), ProximityAlert>();
+            _buffer = new Dictionary<(ulong, long), ProximityAlert>();
         }
 
         public IEnumerable<ProximityAlert> Buffer(IEnumerable<ProximityAlert> alerts)
         {
             foreach (var alert in alerts)
             {
-                var pair = (alert.GridId, alert.Offender.GridId);
-                if (_buffer.ContainsKey(pair))
-                {
-                    Log.Trace($"skipped alert: {alert}");
-                    continue;
-                }
+                var pair = (alert.SteamId, alert.Offender.GridId);
 
+                if (_buffer.ContainsKey(pair)) continue;
                 Log.Trace($"first time alert: {alert}");
+
                 _buffer[pair] = alert;
                 yield return alert;
             }
 
-            var newAlerts = alerts.Select(a => (a.GridId, a.Offender.GridId));
+            // forget about old matches
+            var newAlerts = alerts.Select(a => (a.SteamId, a.Offender.GridId));
             _buffer.IntersectWith(newAlerts);
         }
     }

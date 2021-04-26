@@ -1,23 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Xml.Serialization;
-using Discord.Torch;
 using NLog;
 using Torch;
 using Torch.Views;
-using TorchAlert.Core;
-using TorchAlert.Proximity;
-using Utils.General;
+using Utils.Torch;
 
 namespace TorchAlert
 {
     public sealed class TorchAlertConfig :
         ViewModel,
-        OffenderProximityScanner.IConfig,
-        AlertDiscordClient.IConfig,
-        AlertableSteamIdExtractor.IConfig,
         FileLoggingConfigurator.IConfig,
-        ProximityAlertBuffer.IConfig,
-        TorchDiscordClient.IConfig
+        Core.TorchAlert.IConfig
     {
         const string OpGroupName = "Operation";
         const string LogGroupName = "Logging";
@@ -29,8 +22,7 @@ namespace TorchAlert
         string _token = "empty";
         bool _enable = true;
         List<ulong> _mutedSteamIds = new List<ulong>();
-        string _alertFormat = "${alert_name}: spotted enemy grid \"${grid_name}\" in ${distance} meters, owned by [${faction_tag}] ${owner_name}";
-        string _damageAlertFormat = "${alert_name}: attacked by [${faction_tag}] ${owner_name}";
+        string _alertFormat = "Enemy grid spotted: [${faction_tag}] \"${grid_name}\"";
         string _logFilePath = "Logs/TorchAlert-${shortdate}.log";
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
@@ -54,7 +46,7 @@ namespace TorchAlert
 
         [XmlElement("ProximityThreshold")]
         [Display(Name = "Proximity threshold (meters)", GroupName = OpGroupName, Order = 2)]
-        public int ProximityThreshold
+        public int MaxProximity
         {
             get => _proximityThreshold;
             set => SetValue(ref _proximityThreshold, value);
@@ -82,14 +74,6 @@ namespace TorchAlert
         {
             get => _alertFormat;
             set => SetValue(ref _alertFormat, value);
-        }
-
-        [XmlElement("DamageAlertFormat")]
-        [Display(Name = "Damage alert format", GroupName = DiscordGroupName, Order = 3)]
-        public string DamageAlertFormat
-        {
-            get => _damageAlertFormat;
-            set => SetValue(ref _damageAlertFormat, value);
         }
 
         [XmlElement("LogFilePath")]
