@@ -40,7 +40,7 @@ namespace TorchAlert.Proximity
                 Log.Trace("owner is player");
 
                 var faction = MySession.Static.Factions.GetPlayerFaction(ownerId);
-                var factionId = faction?.FactionId;
+                var factionId = faction?.FactionId ?? 0;
                 var factionName = faction?.Name;
                 var position = grid.PositionComp.GetPosition();
                 var gridInfo = new DefenderGridInfo(grid.EntityId, grid.DisplayName, factionId, factionName, position, steamIds);

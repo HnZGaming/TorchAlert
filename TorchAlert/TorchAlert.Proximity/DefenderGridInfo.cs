@@ -11,7 +11,7 @@ namespace TorchAlert.Proximity
         public DefenderGridInfo(
             long gridId,
             string gridName,
-            long? factionId,
+            long factionId,
             string factionName,
             Vector3D position,
             IEnumerable<ulong> steamIds)
@@ -31,7 +31,7 @@ namespace TorchAlert.Proximity
 
         public readonly long GridId;
         public readonly string GridName;
-        public readonly long? FactionId;
+        public readonly long FactionId;
         public readonly string FactionName;
         public readonly Vector3D Position;
         public readonly IEnumerable<ulong> SteamIds;

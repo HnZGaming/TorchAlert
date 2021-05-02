@@ -61,6 +61,7 @@ namespace TorchAlert.Proximity
             if (!(entity is MyCubeGrid offenderGrid)) return false;
             if (offenderGrid.EntityId == defender.GridId) return false;
             if (!offenderGrid.IsTopMostParent()) return false;
+            if (IsFriendlyGrid(offenderGrid, defender)) return false;
 
             var position = offenderGrid.PositionComp.GetPosition();
             var distance = Vector3D.Distance(defender.Position, position);
@@ -75,6 +76,39 @@ namespace TorchAlert.Proximity
             Log.Trace($"offender: {proximity}");
 
             return true;
+        }
+
+        static bool IsFriendlyGrid(MyCubeGrid offenderGrid, DefenderGridInfo defender)
+        {
+            var offenderFactions =
+                offenderGrid
+                    .BigOwners
+                    .Concat(offenderGrid.SmallOwners)
+                    .Select(i => MySession.Static.Factions.GetPlayerFaction(i))
+                    .Where(f => f != null)
+                    .ToSet();
+
+            var defenderPlayerIds =
+                defender
+                    .SteamIds
+                    .Select(s => MySession.Static.Players.TryGetIdentityId(s))
+                    .ToSet();
+
+            foreach (var offenderFaction in offenderFactions)
+            foreach (var defenderPlayerId in defenderPlayerIds)
+            {
+                if (!offenderFaction.IsFriendly(defenderPlayerId))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static bool HasTerminal(MyCubeGrid grid)
+        {
+            return grid.CubeBlocks.Any(b => b.FatBlock is IMyTerminalBlock);
         }
 
         static OffenderGridInfo MakeOffenderGridInfo(MyCubeGrid grid)
@@ -93,11 +127,6 @@ namespace TorchAlert.Proximity
             }
 
             return new OffenderGridInfo(grid.EntityId, grid.DisplayName, playerName, faction.FactionId, faction.Tag);
-        }
-
-        static bool HasTerminal(MyCubeGrid grid)
-        {
-            return grid.CubeBlocks.Any(b => b.FatBlock is IMyTerminalBlock);
         }
     }
 }
