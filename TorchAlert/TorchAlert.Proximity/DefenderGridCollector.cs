@@ -20,25 +20,33 @@ namespace TorchAlert.Proximity
 
         public IEnumerable<DefenderGridInfo> CollectDefenderGrids()
         {
+            _steamIdExtractor.Update();
+
             var groups = MyCubeGridGroups.Static.Logical.Groups;
             foreach (var group in groups)
             {
                 var grid = group.GroupData.Root;
-                Log.Trace($"\"{grid.DisplayName}\" static: {grid.IsStatic}");
+                Log.Trace($"\"{grid.DisplayName}\"");
+
                 if (!grid.IsStatic) continue;
+                Log.Trace("grid is static");
 
-                if (grid.BigOwners.TryGetFirst(out var ownerId))
-                {
-                    var steamIds = _steamIdExtractor.GetAlertableSteamIds(ownerId);
-                    if (!steamIds.Any()) continue;
+                var gridOwnerIds = grid.BigOwners;
+                if (!gridOwnerIds.TryGetFirst(out var ownerId)) continue;
+                Log.Trace("grid has owner");
 
-                    var factionId = MySession.Static.Factions.GetPlayerFaction(ownerId)?.FactionId;
-                    var position = grid.PositionComp.GetPosition();
-                    var gridInfo = new DefenderGridInfo(grid.EntityId, grid.DisplayName, factionId, position, steamIds);
+                var steamIds = _steamIdExtractor.GetAlertableSteamIds(ownerId);
+                if (!steamIds.Any()) continue;
+                Log.Trace("owner is player");
 
-                    Log.Trace($"defender: {gridInfo}");
-                    yield return gridInfo;
-                }
+                var faction = MySession.Static.Factions.GetPlayerFaction(ownerId);
+                var factionId = faction?.FactionId;
+                var factionName = faction?.Name;
+                var position = grid.PositionComp.GetPosition();
+                var gridInfo = new DefenderGridInfo(grid.EntityId, grid.DisplayName, factionId, factionName, position, steamIds);
+                Log.Trace($"defender: {gridInfo}");
+
+                yield return gridInfo;
             }
         }
     }

@@ -1,6 +1,6 @@
 ﻿namespace TorchAlert.Proximity
 {
-    public sealed class ProximityAlert
+    public readonly struct ProximityAlert
     {
         public ProximityAlert(ulong steamId, long gridId, string gridName, OffenderGridInfo offender, double distance)
         {
@@ -11,15 +11,15 @@
             Distance = distance;
         }
 
-        public ulong SteamId { get; }
-        public long GridId { get; }
-        public string GridName { get; }
-        public OffenderGridInfo Offender { get; }
-        public double Distance { get; }
+        public readonly ulong SteamId;
+        public readonly long GridId;
+        public readonly string GridName;
+        public readonly OffenderGridInfo Offender;
+        public readonly double Distance;
 
         public override string ToString()
         {
-            return $"{nameof(SteamId)}: {SteamId}, {nameof(GridName)}: {GridName}, {nameof(Distance)}: {Distance}, {nameof(Offender)}: ({Offender})";
+            return $"\"{GridName} ({GridName})\" <{SteamId}>, Offender: {{{Offender}}}, Distance: {Distance}";
         }
     }
 }
