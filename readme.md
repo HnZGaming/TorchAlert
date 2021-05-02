@@ -20,7 +20,7 @@ Discord bot will send DM to offline players whenever their grids are in danger.
 
 woo woo
 
-## Setup (Plugin)
+## Setup (Admin)
 
 1. Grab the binary in [Torch plugin repository](https://torchapi.net/plugins/item/5a486edf-d677-4c5d-a4d7-9015dd9fb20b)
 1. Install the plugin like usual
@@ -35,28 +35,16 @@ woo woo
 1. Remember the link ID (1-5 digits number) that the plugin will spit out in response to the command
 1. Mention or DM the bot with the link ID
 
+## Troubleshooting (Admin):
+
+* `!alert configs` to view and/or edit all configs
+* `!alert commands` to view all commands
+
 ## Troubleshooting (User)
 
 * To validate your Discord/Steam link, type `!alert check` in game or say `check` to the bot on Discord.
 * To link again (for whatever reason) you can simply `!alert link` again.
-* To turn on/off the alert for a player, say "mute" or "unmute" to the bot on Discord, or "!mute" or "!unmute" in game.
-
-## Config
-
-* Bot token
-* Enable/disable the whole thing
-* "Scan" interval
-* "Scan" radius
-* Alert message formats (Markdown supported I guess)
-* Log file path
-* Show/hide console logs
-* Enable/disable trace/debug logs
-
-Note:
-
-* Most of configs can be set via admin command (see `!longhelp`)
-* You don't need to restart Torch when you change the configs
-* `!alert mock <steam id>` to debug the alert message format with a mock alert
+* To turn on/off the alert for a player, say "mute" or "unmute" to the bot on Discord, or `!mute` or `!unmute` in game.
 
 ## Bug Fix & Feature Requests
 
