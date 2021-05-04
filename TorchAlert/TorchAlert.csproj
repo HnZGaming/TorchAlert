@@ -193,14 +193,17 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="TorchAlert.Core.Patches\MyCubeGridPatch.cs" />
         <Compile Include="TorchAlert.Core\AlertableSteamIdExtractor.cs" />
         <Compile Include="TorchAlert.Core\AlertDiscordClient.cs" />
+        <Compile Include="TorchAlert.Core\ParentsLookupTree.cs" />
+        <Compile Include="TorchAlert.Core\IParentsLookupTree.cs" />
         <Compile Include="TorchAlert.Core\TorchAlert.cs" />
         <Compile Include="TorchAlert.Core.Proximity\DefenderGridInfo.cs" />
         <Compile Include="TorchAlert.Core.Proximity\DefenderGridCollector.cs" />
         <Compile Include="TorchAlert.Core.Proximity\OffenderGridInfo.cs" />
         <Compile Include="TorchAlert.Core.Proximity\ProximityAlert.cs" />
-        <Compile Include="TorchAlert.Core.Proximity\ProximityAlertBuffer.cs" />
+        <Compile Include="TorchAlert.Core.Proximity\ProximityAlertFilter.cs" />
         <Compile Include="TorchAlert.Core.Proximity\ProximityAlertCreator.cs" />
         <Compile Include="TorchAlert.Core.Proximity\OffenderProximityInfo.cs" />
         <Compile Include="TorchAlert.Core.Proximity\OffenderProximityScanner.cs" />

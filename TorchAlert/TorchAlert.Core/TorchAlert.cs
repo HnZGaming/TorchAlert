@@ -17,7 +17,7 @@ namespace TorchAlert.Core
             OffenderProximityScanner.IConfig,
             AlertDiscordClient.IConfig,
             AlertableSteamIdExtractor.IConfig,
-            ProximityAlertBuffer.IConfig,
+            ProximityAlertFilter.IConfig,
             TorchDiscordClient.IConfig
         {
             bool Enable { get; }
@@ -32,13 +32,13 @@ namespace TorchAlert.Core
         readonly DefenderGridCollector _defenderGridCollector;
         readonly OffenderProximityScanner _offenderProximityScanner;
         readonly ProximityAlertCreator _alertCreator;
-        readonly ProximityAlertBuffer _alertBuffer;
+        readonly ProximityAlertFilter _alertFilter;
         readonly TorchDiscordClient _torchDiscordClient;
         readonly AlertDiscordClient _alertDiscordClient;
         readonly DiscordIdentityLinker _identityLinker;
         readonly DiscordIdentityLinkDb _linkDb;
 
-        public TorchAlert(IConfig config, string linkDbPath)
+        public TorchAlert(IConfig config, string linkDbPath, IParentsLookupTree<long> splitLookup)
         {
             _config = config;
             _linkDb = new DiscordIdentityLinkDb(linkDbPath);
@@ -46,7 +46,7 @@ namespace TorchAlert.Core
             _defenderGridCollector = new DefenderGridCollector(steamIdExtractor);
             _offenderProximityScanner = new OffenderProximityScanner(_config);
             _alertCreator = new ProximityAlertCreator();
-            _alertBuffer = new ProximityAlertBuffer(_config);
+            _alertFilter = new ProximityAlertFilter(_config, splitLookup);
             _identityLinker = new DiscordIdentityLinker(_linkDb);
             _torchDiscordClient = new TorchDiscordClient(_config, _identityLinker);
             _alertDiscordClient = new AlertDiscordClient(_config, _torchDiscordClient);
@@ -95,7 +95,7 @@ namespace TorchAlert.Core
                     Log.Debug($"proximities: {scan.ToStringSeq()}");
 
                     var alerts = _alertCreator.CreateAlerts(scan).ToArray();
-                    alerts = _alertBuffer.Buffer(alerts).ToArray();
+                    alerts = _alertFilter.Filter(alerts).ToArray();
                     Log.Debug($"alerts: {alerts.ToStringSeq()}");
 
                     await _alertDiscordClient.SendProximityAlertAsync(alerts);

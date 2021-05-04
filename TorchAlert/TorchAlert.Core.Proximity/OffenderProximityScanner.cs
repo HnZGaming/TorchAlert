@@ -3,7 +3,6 @@ using System.Linq;
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
-using Sandbox.ModAPI;
 using Utils.General;
 using Utils.Torch;
 using VRage.Game.Entity;
@@ -61,7 +60,6 @@ namespace TorchAlert.Core.Proximity
             if (!(entity is MyCubeGrid offenderGrid)) return false;
             if (offenderGrid.EntityId == defender.GridId) return false;
             if (!offenderGrid.IsTopMostParent()) return false;
-            if (!HasFunctionalBlock(offenderGrid)) return false;
             if (!IsEnemyGrid(offenderGrid, defender)) return false;
 
             var position = offenderGrid.PositionComp.GetPosition();
@@ -79,8 +77,7 @@ namespace TorchAlert.Core.Proximity
         {
             var offenderFactions =
                 offenderGrid
-                    .BigOwners
-                    .Concat(offenderGrid.SmallOwners)
+                    .BigOwners.Concat(offenderGrid.SmallOwners)
                     .Select(i => MySession.Static.Factions.GetPlayerFaction(i))
                     .Where(f => f != null)
                     .ToSet();
@@ -94,18 +91,17 @@ namespace TorchAlert.Core.Proximity
             foreach (var offenderFaction in offenderFactions)
             foreach (var defenderPlayerId in defenderPlayerIds)
             {
-                if (!offenderFaction.IsFriendly(defenderPlayerId))
+                if (!offenderFaction.Members.ContainsKey(defenderPlayerId) &&
+                    !offenderFaction.IsFriendly(defenderPlayerId))
                 {
+                    Log.Trace($"enemy: <{defenderPlayerId}> to [{offenderFaction.Tag}] \"{offenderFaction.Name}\"");
                     return true;
                 }
+
+                Log.Trace($"friendly: <{defenderPlayerId}> to [{offenderFaction.Tag}] \"{offenderFaction.Name}\"");
             }
 
-            return true;
-        }
-
-        static bool HasFunctionalBlock(MyCubeGrid grid)
-        {
-            return grid.CubeBlocks.Any(b => b.FatBlock is IMyFunctionalBlock);
+            return false;
         }
 
         static OffenderGridInfo MakeOffenderGridInfo(MyCubeGrid grid)
