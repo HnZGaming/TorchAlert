@@ -61,15 +61,12 @@ namespace TorchAlert.Proximity
             if (!(entity is MyCubeGrid offenderGrid)) return false;
             if (offenderGrid.EntityId == defender.GridId) return false;
             if (!offenderGrid.IsTopMostParent()) return false;
-            if (IsFriendlyGrid(offenderGrid, defender)) return false;
+            if (!HasFunctionalBlock(offenderGrid)) return false;
+            if (!IsEnemyGrid(offenderGrid, defender)) return false;
 
             var position = offenderGrid.PositionComp.GetPosition();
             var distance = Vector3D.Distance(defender.Position, position);
             if (distance > _config.MaxProximity) return false;
-
-            Log.Trace($"offender candidate: \"{offenderGrid.DisplayName}\"");
-
-            if (!HasTerminal(offenderGrid)) return false;
 
             var offenderInfo = MakeOffenderGridInfo(offenderGrid);
             proximity = new OffenderProximityInfo(defender, offenderInfo, distance);
@@ -78,7 +75,7 @@ namespace TorchAlert.Proximity
             return true;
         }
 
-        static bool IsFriendlyGrid(MyCubeGrid offenderGrid, DefenderGridInfo defender)
+        static bool IsEnemyGrid(MyCubeGrid offenderGrid, DefenderGridInfo defender)
         {
             var offenderFactions =
                 offenderGrid
@@ -99,16 +96,16 @@ namespace TorchAlert.Proximity
             {
                 if (!offenderFaction.IsFriendly(defenderPlayerId))
                 {
-                    return false;
+                    return true;
                 }
             }
 
             return true;
         }
 
-        static bool HasTerminal(MyCubeGrid grid)
+        static bool HasFunctionalBlock(MyCubeGrid grid)
         {
-            return grid.CubeBlocks.Any(b => b.FatBlock is IMyTerminalBlock);
+            return grid.CubeBlocks.Any(b => b.FatBlock is IMyFunctionalBlock);
         }
 
         static OffenderGridInfo MakeOffenderGridInfo(MyCubeGrid grid)
