@@ -8,6 +8,8 @@ using Torch;
 using Torch.API;
 using Torch.API.Managers;
 using Torch.API.Plugins;
+using TorchAlert.Core;
+using TorchAlert.Core.Patches;
 using Utils.General;
 using Utils.Torch;
 
@@ -43,7 +45,9 @@ namespace TorchAlert
             _fileLoggingConfigurator.Configure(Config);
 
             var linkDbPath = this.MakeFilePath($"{nameof(DiscordIdentityLinker)}.csv");
-            TorchAlert = new Core.TorchAlert(Config, linkDbPath);
+            var splitLookup = new ParentsLookupTree<long>();
+            TorchAlert = new Core.TorchAlert(Config, linkDbPath, splitLookup);
+            MyCubeGridPatch.SplitLookup = splitLookup;
 
             Log.Info("initialized");
         }
@@ -60,6 +64,12 @@ namespace TorchAlert
                         args.PropertyName == nameof(Config.Token))
                     {
                         await TorchAlert.InitializeDiscordAsync();
+                    }
+
+                    if (args.PropertyName == nameof(Config.EnableGameText) ||
+                        args.PropertyName == nameof(Config.GameText))
+                    {
+                        await TorchAlert.UpdateGameTextAsync();
                     }
                 }
             }

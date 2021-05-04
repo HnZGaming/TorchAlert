@@ -4,7 +4,7 @@ using System.Linq;
 using Utils.General;
 using VRageMath;
 
-namespace TorchAlert.Proximity
+namespace TorchAlert.Core.Proximity
 {
     public readonly struct DefenderGridInfo
     {

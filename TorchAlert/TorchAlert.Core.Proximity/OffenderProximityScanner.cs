@@ -3,14 +3,13 @@ using System.Linq;
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
-using Sandbox.ModAPI;
 using Utils.General;
 using Utils.Torch;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI.Ingame;
 using VRageMath;
 
-namespace TorchAlert.Proximity
+namespace TorchAlert.Core.Proximity
 {
     // must be testable
     public sealed class OffenderProximityScanner
@@ -61,15 +60,11 @@ namespace TorchAlert.Proximity
             if (!(entity is MyCubeGrid offenderGrid)) return false;
             if (offenderGrid.EntityId == defender.GridId) return false;
             if (!offenderGrid.IsTopMostParent()) return false;
-            if (IsFriendlyGrid(offenderGrid, defender)) return false;
+            if (!IsEnemyGrid(offenderGrid, defender)) return false;
 
             var position = offenderGrid.PositionComp.GetPosition();
             var distance = Vector3D.Distance(defender.Position, position);
             if (distance > _config.MaxProximity) return false;
-
-            Log.Trace($"offender candidate: \"{offenderGrid.DisplayName}\"");
-
-            if (!HasTerminal(offenderGrid)) return false;
 
             var offenderInfo = MakeOffenderGridInfo(offenderGrid);
             proximity = new OffenderProximityInfo(defender, offenderInfo, distance);
@@ -78,12 +73,11 @@ namespace TorchAlert.Proximity
             return true;
         }
 
-        static bool IsFriendlyGrid(MyCubeGrid offenderGrid, DefenderGridInfo defender)
+        static bool IsEnemyGrid(MyCubeGrid offenderGrid, DefenderGridInfo defender)
         {
             var offenderFactions =
                 offenderGrid
-                    .BigOwners
-                    .Concat(offenderGrid.SmallOwners)
+                    .BigOwners.Concat(offenderGrid.SmallOwners)
                     .Select(i => MySession.Static.Factions.GetPlayerFaction(i))
                     .Where(f => f != null)
                     .ToSet();
@@ -97,18 +91,17 @@ namespace TorchAlert.Proximity
             foreach (var offenderFaction in offenderFactions)
             foreach (var defenderPlayerId in defenderPlayerIds)
             {
-                if (!offenderFaction.IsFriendly(defenderPlayerId))
+                if (!offenderFaction.Members.ContainsKey(defenderPlayerId) &&
+                    !offenderFaction.IsFriendly(defenderPlayerId))
                 {
-                    return false;
+                    Log.Trace($"enemy: <{defenderPlayerId}> to [{offenderFaction.Tag}] \"{offenderFaction.Name}\"");
+                    return true;
                 }
+
+                Log.Trace($"friendly: <{defenderPlayerId}> to [{offenderFaction.Tag}] \"{offenderFaction.Name}\"");
             }
 
-            return true;
-        }
-
-        static bool HasTerminal(MyCubeGrid grid)
-        {
-            return grid.CubeBlocks.Any(b => b.FatBlock is IMyTerminalBlock);
+            return false;
         }
 
         static OffenderGridInfo MakeOffenderGridInfo(MyCubeGrid grid)

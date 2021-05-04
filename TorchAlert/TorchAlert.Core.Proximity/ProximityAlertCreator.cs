@@ -6,7 +6,7 @@ using Sandbox.Game.World;
 using Utils.General;
 using VRage.Game;
 
-namespace TorchAlert.Proximity
+namespace TorchAlert.Core.Proximity
 {
     public sealed class ProximityAlertCreator
     {
