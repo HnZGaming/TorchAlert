@@ -65,6 +65,12 @@ namespace TorchAlert
                     {
                         await TorchAlert.InitializeDiscordAsync();
                     }
+
+                    if (args.PropertyName == nameof(Config.EnableGameText) ||
+                        args.PropertyName == nameof(Config.GameText))
+                    {
+                        await TorchAlert.UpdateGameTextAsync();
+                    }
                 }
             }
             catch (Exception e)

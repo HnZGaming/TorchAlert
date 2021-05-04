@@ -16,6 +16,8 @@ namespace Discord.Torch
         public interface IConfig
         {
             string Token { get; }
+            bool EnableGameText { get; }
+            string GameText { get; }
         }
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
@@ -71,10 +73,18 @@ namespace Discord.Torch
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
             await _client.SetStatusAsync(UserStatus.Online);
-            await _client.SetGameAsync("Watching...");
+            await UpdateGameTextAsync();
 
             IsReady = true;
             Log.Info("connected");
+        }
+
+        public async Task UpdateGameTextAsync()
+        {
+            if (_config.EnableGameText)
+            {
+                await _client.SetGameAsync(_config.GameText);
+            }
         }
 
         public void Close()

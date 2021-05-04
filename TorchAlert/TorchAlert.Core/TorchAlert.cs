@@ -175,5 +175,10 @@ namespace TorchAlert.Core
 
             await _torchDiscordClient.SendMessageAsync(discordId, message);
         }
+
+        public async Task UpdateGameTextAsync()
+        {
+            await _torchDiscordClient.UpdateGameTextAsync();
+        }
     }
 }

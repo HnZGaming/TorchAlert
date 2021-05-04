@@ -27,8 +27,10 @@ namespace TorchAlert
         bool _suppressWpfOutput;
         bool _enableLoggingTrace;
         bool _enableLoggingDebug;
+        bool _enableGameText = true;
+        string _gameText = "Watching";
 
-        [XmlElement("Enable")]
+        [XmlElement]
         [Display(Name = "Enable", GroupName = OpGroupName, Order = 0)]
         public bool Enable
         {
@@ -36,7 +38,7 @@ namespace TorchAlert
             set => SetValue(ref _enable, value);
         }
 
-        [XmlElement("ScanInterval")]
+        [XmlElement]
         [Display(Name = "Scan interval", GroupName = OpGroupName, Order = 1)]
         public int ScanInterval
         {
@@ -44,7 +46,7 @@ namespace TorchAlert
             set => SetValue(ref _scanInterval, value);
         }
 
-        [XmlElement("ProximityThreshold")]
+        [XmlElement]
         [Display(Name = "Proximity threshold (meters)", GroupName = OpGroupName, Order = 2)]
         public int MaxProximity
         {
@@ -52,7 +54,7 @@ namespace TorchAlert
             set => SetValue(ref _proximityThreshold, value);
         }
 
-        [XmlElement("MutedSteamIds")]
+        [XmlElement]
         [Display(Name = "Muted Steam IDs", GroupName = OpGroupName, Order = 3)]
         public List<ulong> MutedSteamIds
         {
@@ -60,7 +62,7 @@ namespace TorchAlert
             set => SetValue(ref _mutedSteamIds, value);
         }
 
-        [XmlElement("Token")]
+        [XmlElement]
         [Display(Name = "Discord bot token", GroupName = DiscordGroupName, Order = 1)]
         public string Token
         {
@@ -68,7 +70,7 @@ namespace TorchAlert
             set => SetValue(ref _token, value);
         }
 
-        [XmlElement("ProximityAlertFormat")]
+        [XmlElement]
         [Display(Name = "Proximity alert format", GroupName = DiscordGroupName, Order = 2)]
         public string ProximityAlertFormat
         {
@@ -76,7 +78,23 @@ namespace TorchAlert
             set => SetValue(ref _alertFormat, value);
         }
 
-        [XmlElement("LogFilePath")]
+        [XmlElement]
+        [Display(Name = "Enable game text", GroupName = DiscordGroupName, Order = 3)]
+        public bool EnableGameText
+        {
+            get => _enableGameText;
+            set => SetValue(ref _enableGameText, value);
+        }
+
+        [XmlElement]
+        [Display(Name = "Game text", GroupName = DiscordGroupName, Order = 4)]
+        public string GameText
+        {
+            get => _gameText;
+            set => SetValue(ref _gameText, value);
+        }
+
+        [XmlElement]
         [Display(Name = "Log file path", GroupName = LogGroupName, Order = 0)]
         public string LogFilePath
         {
@@ -84,7 +102,7 @@ namespace TorchAlert
             set => SetValue(ref _logFilePath, value);
         }
 
-        [XmlElement("SuppressWpfOutput")]
+        [XmlElement]
         [Display(Name = "Suppress console output", GroupName = LogGroupName, Order = 1)]
         public bool SuppressWpfOutput
         {
@@ -92,7 +110,7 @@ namespace TorchAlert
             set => SetValue(ref _suppressWpfOutput, value);
         }
 
-        [XmlElement("EnableLoggingTrace")]
+        [XmlElement]
         [Display(Name = "Output trace logs", GroupName = LogGroupName, Order = 2)]
         public bool EnableLoggingTrace
         {
@@ -100,7 +118,7 @@ namespace TorchAlert
             set => SetValue(ref _enableLoggingTrace, value);
         }
 
-        [XmlElement("EnableLoggingDebug")]
+        [XmlElement]
         [Display(Name = "Output debug logs", GroupName = LogGroupName, Order = 3)]
         public bool EnableLoggingDebug
         {
