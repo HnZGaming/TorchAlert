@@ -6,7 +6,7 @@ using Discord.Torch;
 using NLog;
 using Sandbox.Game.World;
 using Torch.API.Managers;
-using TorchAlert.Proximity;
+using TorchAlert.Core.Proximity;
 using Utils.General;
 
 namespace TorchAlert.Core

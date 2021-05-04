@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord.Torch;
 using NLog;
-using TorchAlert.Proximity;
+using TorchAlert.Core.Proximity;
 using Utils.General;
 
 namespace TorchAlert.Core

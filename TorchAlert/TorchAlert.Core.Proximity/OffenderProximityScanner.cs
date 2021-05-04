@@ -10,7 +10,7 @@ using VRage.Game.Entity;
 using VRage.Game.ModAPI.Ingame;
 using VRageMath;
 
-namespace TorchAlert.Proximity
+namespace TorchAlert.Core.Proximity
 {
     // must be testable
     public sealed class OffenderProximityScanner

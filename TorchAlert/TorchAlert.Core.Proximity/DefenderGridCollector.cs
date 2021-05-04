@@ -3,10 +3,9 @@ using System.Linq;
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
-using TorchAlert.Core;
 using Utils.General;
 
-namespace TorchAlert.Proximity
+namespace TorchAlert.Core.Proximity
 {
     public sealed class DefenderGridCollector
     {

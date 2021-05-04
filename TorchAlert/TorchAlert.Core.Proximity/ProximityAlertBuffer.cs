@@ -3,7 +3,7 @@ using System.Linq;
 using NLog;
 using Utils.General;
 
-namespace TorchAlert.Proximity
+namespace TorchAlert.Core.Proximity
 {
     public sealed class ProximityAlertBuffer
     {

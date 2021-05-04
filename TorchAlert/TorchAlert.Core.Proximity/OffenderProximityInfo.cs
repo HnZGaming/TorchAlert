@@ -1,4 +1,4 @@
-﻿namespace TorchAlert.Proximity
+﻿namespace TorchAlert.Core.Proximity
 {
     public readonly struct OffenderProximityInfo
     {
