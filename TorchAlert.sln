@@ -4,6 +4,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TorchAlert", "TorchAlert\To
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord.Torch", "Discord.Torch\Discord.Torch.csproj", "{3A252239-3111-457B-8E3F-FCD7487193CF}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Utils.General", "TorchUtils\Utils.General\Utils.General.shproj", "{4E4B3282-B361-4E86-B971-059EFF657677}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Utils.Torch", "TorchUtils\Utils.Torch\Utils.Torch.shproj", "{27569BFC-809F-4253-8959-78107741620D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -4,17 +4,19 @@ using System.Linq;
 using Utils.General;
 using VRageMath;
 
-namespace TorchAlert.Proximity
+namespace TorchAlert.Core.Proximity
 {
-    public sealed class DefenderGridInfo
+    public readonly struct DefenderGridInfo
     {
         public DefenderGridInfo(
             long gridId,
             string gridName,
-            long? factionId,
+            long factionId,
+            string factionName,
             Vector3D position,
             IEnumerable<ulong> steamIds)
         {
+            FactionName = factionName;
             GridId = gridId;
             GridName = gridName;
             FactionId = factionId;
@@ -27,15 +29,16 @@ namespace TorchAlert.Proximity
             }
         }
 
-        public long GridId { get; }
-        public string GridName { get; }
-        public long? FactionId { get; }
-        public Vector3D Position { get; }
-        public IEnumerable<ulong> SteamIds { get; }
+        public readonly long GridId;
+        public readonly string GridName;
+        public readonly long FactionId;
+        public readonly string FactionName;
+        public readonly Vector3D Position;
+        public readonly IEnumerable<ulong> SteamIds;
 
         public override string ToString()
         {
-            return $"{nameof(GridName)}: {GridName}, {nameof(SteamIds)}: {SteamIds.ToStringSeq()}, {nameof(FactionId)}: {FactionId ?? 0}";
+            return $"\"{GridName}\" <{GridId}> [{FactionName}] {SteamIds.ToStringSeq()}";
         }
     }
 }
