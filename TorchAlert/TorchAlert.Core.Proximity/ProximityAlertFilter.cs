@@ -15,55 +15,57 @@ namespace TorchAlert.Core.Proximity
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IConfig _config;
         readonly IParentsLookupTree<long> _splitLookup;
-        readonly Dictionary<ulong, HashSet<long>> _lastAlertGridIds;
+        readonly Dictionary<ulong, HashSet<long>> _playersToLastOffenderIds;
 
         public ProximityAlertFilter(IConfig config, IParentsLookupTree<long> splitLookup)
         {
             _config = config;
             _splitLookup = splitLookup;
-            _lastAlertGridIds = new Dictionary<ulong, HashSet<long>>();
+            _playersToLastOffenderIds = new Dictionary<ulong, HashSet<long>>();
         }
 
-        public IEnumerable<ProximityAlert> Filter(IEnumerable<ProximityAlert> alerts)
+        public IEnumerable<ProximityAlert> Filter(IEnumerable<ProximityAlert> nextAlerts)
         {
-            var alertsPerPlayer = new Dictionary<ulong, HashSet<ProximityAlert>>();
-            var offenderGridIdsPerPlayer = new Dictionary<ulong, HashSet<long>>();
-            foreach (var alert in alerts)
+            var playersToAlerts = new Dictionary<ulong, HashSet<ProximityAlert>>();
+            var playersToOffenderIds = new Dictionary<ulong, HashSet<long>>();
+            foreach (var nextAlert in nextAlerts)
             {
-                alertsPerPlayer.Add(alert.SteamId, alert);
-                offenderGridIdsPerPlayer.Add(alert.SteamId, alert.Offender.GridId);
+                playersToAlerts.Add(nextAlert.SteamId, nextAlert);
+                playersToOffenderIds.Add(nextAlert.SteamId, nextAlert.Offender.GridId);
             }
 
             // forget about offender grids that didn't show up once
-            _lastAlertGridIds.IntersectWith(offenderGridIdsPerPlayer);
+            // so that we won't hold onto distant/deleted grids forever
+            // also we need to detect "re-entry"
+            _playersToLastOffenderIds.IntersectWith(playersToOffenderIds);
 
-            foreach (var (steamId, playerAlerts) in alertsPerPlayer)
+            foreach (var (steamId, alerts) in playersToAlerts)
             {
-                var lastAlertGridIds = _lastAlertGridIds.GetOrAdd<ulong, long, HashSet<long>>(steamId);
-                foreach (var playerAlert in playerAlerts)
+                var lastOffenderIds = _playersToLastOffenderIds.GetOrAdd<ulong, long, HashSet<long>>(steamId);
+                foreach (var alert in alerts)
                 {
-                    var alertGridId = playerAlert.Offender.GridId;
-                    if (lastAlertGridIds.Contains(alertGridId))
+                    var offenderId = alert.Offender.GridId;
+                    if (lastOffenderIds.Contains(offenderId))
                     {
-                        Log.Trace($"filtered alert: already alerted: {playerAlert}");
+                        Log.Debug($"filtered alert: already alerted: {alert}");
                         continue;
                     }
 
-                    var parentGridIds = _splitLookup.GetParentsOf(alertGridId);
-                    if (lastAlertGridIds.ContainsAny(parentGridIds))
+                    var parentGridIds = _splitLookup.GetParentsOf(offenderId);
+                    if (lastOffenderIds.ContainsAny(parentGridIds))
                     {
-                        Log.Trace($"filtered alert: parent(s) already alerted: {playerAlert}");
+                        Log.Debug($"filtered alert: parent(s) already alerted: {alert}");
                         continue;
                     }
 
-                    _lastAlertGridIds.Add(steamId, alertGridId);
-                    yield return playerAlert;
+                    _playersToLastOffenderIds.Add(steamId, offenderId);
+                    yield return alert;
                 }
             }
 
-            foreach (var (steamId, lastAlertGridIds) in _lastAlertGridIds)
+            foreach (var (steamId, offenderIds) in _playersToLastOffenderIds)
             {
-                Log.Debug($"last alerts to {steamId}: {lastAlertGridIds.ToStringSeq()}");
+                Log.Debug($"last alerts to {steamId}: {offenderIds.ToStringSeq()}");
             }
         }
     }
