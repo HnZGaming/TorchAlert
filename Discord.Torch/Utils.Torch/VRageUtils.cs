@@ -146,11 +146,6 @@ namespace Utils.Torch
             return self.ManagedThreadId == MySandboxGame.Static.UpdateThread.ManagedThreadId;
         }
 
-        public static void SendAddGps(this MyGpsCollection self, long identityId, MyGps gps, bool playSound)
-        {
-            self.SendAddGps(identityId, ref gps, gps.EntityId, playSound);
-        }
-
         public static bool TryGetPlayerByGrid(this MyPlayerCollection self, IMyCubeGrid grid, out MyPlayer player)
         {
             player = null;

@@ -36,7 +36,7 @@ namespace TorchAlert
 
             _cancellationTokenSource = new CancellationTokenSource();
 
-            var configPath = this.MakeConfigFilePath();
+            var configPath = this.MakeFilePath($"{nameof(TorchAlertPlugin)}.cfg");
             _config = Persistent<TorchAlertConfig>.Load(configPath);
             Config.PropertyChanged += OnConfigPropertyChanged;
 
