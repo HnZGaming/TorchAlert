@@ -60,7 +60,8 @@ namespace TorchAlert.Core
             {
                 var message = _config.ProximityAlertFormat
                     .Replace("${distance}", $"{alert.Distance:0}")
-                    .Replace("${grid_name}", alert.Offender.GridName)
+                    .Replace("${grid_name_ours}", alert.DefenderGridName)
+                    .Replace("${grid_name_theirs}", alert.Offender.GridName)
                     .Replace("${owner_name}", alert.Offender.OwnerName ?? "<none>")
                     .Replace("${faction_tag}", alert.Offender.FactionTag ?? "<none>");
 
